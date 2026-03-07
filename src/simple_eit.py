@@ -10,14 +10,12 @@ class SimpleEIT:
 
     def __init__(self):
 
-        # Select GPIO pins
-        # MUX 1 (S+ and V+)
-        self.a0_mux1 = LED(26)
-        self.a1_mux1 = LED(19)
+        # GPIO controllers for multiplexers
+        # MUX1 controls S+ and V+ (A0, A1)
+        self.mux1 = (LED(26), LED(19))
 
-        # MUX 2 (S- and V-)
-        self.a0_mux2 = LED(13)
-        self.a1_mux2 = LED(6)
+        # MUX2 controls S- and V- (A0, A1)
+        self.mux2 = (LED(13), LED(6))
 
         # Device manager
         self.dm = devices.Devices()
@@ -48,11 +46,23 @@ class SimpleEIT:
         self.ax.set_yticklabels(["Bottom (C)", "Top (A)"])
 
     def get_voltages(self):
-        """
-        Read voltages using the device manager and MUX control.
-        """
-        # Example placeholder
+
+        self.set_mux(0, 0)
+        
         return np.random.rand(6)
+
+    def set_mux(self, c1, c2)
+        """ Controls selections for MUX 1 and MUX 2 using GPIO"""
+        match c1:
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+        match c2:
+            case 0:
+            case 1:
+            case 2:
+            case 3:
 
     def update(self, frame):
 
@@ -81,7 +91,8 @@ class SimpleEIT:
             self.fig,
             self.update,
             interval=20,
-            blit=True
+            blit=True,
+            cache_frame_data=False
         )
 
         plt.show()
