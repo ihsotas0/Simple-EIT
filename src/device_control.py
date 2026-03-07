@@ -34,6 +34,7 @@ def get_devices():
         except:
             print(f"  {instrument}: Connection failed")
 
-
+if __name__ == "__main__":
+    get_devices()
 
 
