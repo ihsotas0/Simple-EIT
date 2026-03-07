@@ -12,15 +12,25 @@ def get_devices():
     # Find Agilent instruments (Vendor ID: 2391)
     agilent_instruments = [r for r in resources if "2391" in r]
 
-    print("Found Keysight/Agilent instruments:")
-    for instrument in keysight_instruments.append(agilent_instruments):
+    print("Found Keysight instruments:")
+    for instrument in keysight_instruments:
         try:
             inst = rm.open_resource(instrument)
             idn = inst.query("*IDN?")
-            print(f"--> {instrument}\n-->{idn.strip()}")
+            print(f"  {instrument}\n  {idn.strip()}")
             inst.close()
         except:
-            print(f"--> {instrument}: Connection failed")
+            print(f"  {instrument}: Connection failed")
+
+    print("Found Agilent instruments:")
+    for instrument in agilent_instruments:
+        try:
+            inst = rm.open_resource(instrument)
+            idn = inst.query("*IDN?")
+            print(f"  {instrument}\n  {idn.strip()}")
+            inst.close()
+        except:
+            print(f"  {instrument}: Connection failed")
 
     # Keysight is our voltmeter, Agilent is our wavegen
     wavegen = rm.open_resource(agilent_instruments[0])
@@ -30,6 +40,6 @@ def get_devices():
 
 
 if __name__ == "__main__":
-    get_devices()
+    _, _ = get_devices()
 
 
