@@ -6,11 +6,11 @@ def get_devices():
     rm = pyvisa.ResourceManager()
     resources = rm.list_resources()
 
-    # Find Keysight instruments (Vendor ID: 0x2A8D)
-    keysight_instruments = [r for r in resources if "0x2A8D" in r]
+    # Find Keysight instruments (Vendor ID: 10893)
+    keysight_instruments = [r for r in resources if "10893" in r]
 
-    # Find Agilent instruments (Vendor ID: 0x957)
-    agilent_instruments = [r for r in resources if "0x957" in r]
+    # Find Agilent instruments (Vendor ID: 2391)
+    agilent_instruments = [r for r in resources if "2391" in r]
 
     # Keysight is our voltmeter, Agilent is our wavegen
 
