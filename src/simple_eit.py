@@ -87,44 +87,44 @@ class SimpleEIT:
 
         return v_return
 
-    # def set_mux(self, c1, c2)
-    #     """ Controls selections for MUX 1 and MUX 2 using GPIO"""
-    #     match c1:
-    #         case 0:
-    #             self.mux1[0].off()
-    #             self.mux1[1].off()
-    #         case 1:
-    #             self.mux1[0].off()
-    #             self.mux1[1].on()
-    #         case 2:
-    #             self.mux1[0].on()
-    #             self.mux1[1].off()
-    #         case 3:
-    #             self.mux1[0].on()
-    #             self.mux1[1].on()
-    #     match c2:
-    #         case 0:
-    #             self.mux2[0].off()
-    #             self.mux2[1].off()
-    #         case 1:
-    #             self.mux2[0].off()
-    #             self.mux2[1].on()
-    #         case 2:
-    #             self.mux2[0].on()
-    #             self.mux2[1].off()
-    #         case 3:
-    #             self.mux2[0].on()
-    #             self.mux2[1].on()
+    def set_mux(self, c1, c2)
+        """ Controls selections for MUX 1 and MUX 2 using GPIO"""
+        match c1:
+            case 0:
+                self.mux1[0].off()
+                self.mux1[1].off()
+            case 1:
+                self.mux1[0].off()
+                self.mux1[1].on()
+            case 2:
+                self.mux1[0].on()
+                self.mux1[1].off()
+            case 3:
+                self.mux1[0].on()
+                self.mux1[1].on()
+        match c2:
+            case 0:
+                self.mux2[0].off()
+                self.mux2[1].off()
+            case 1:
+                self.mux2[0].off()
+                self.mux2[1].on()
+            case 2:
+                self.mux2[0].on()
+                self.mux2[1].off()
+            case 3:
+                self.mux2[0].on()
+                self.mux2[1].on()
 
-    def set_mux(self, c1, c2):
-        """Controls selections for MUX 1 and MUX 2 using GPIO"""
+    # def set_mux(self, c1, c2):
+    #     """Controls selections for MUX 1 and MUX 2 using GPIO"""
 
-        def set_mux_state(mux, state):
-            mux[0].off() if state & 0b01 == 0 else mux[0].on()
-            mux[1].off() if state & 0b10 == 0 else mux[1].on()
+    #     def set_mux_state(mux, state):
+    #         mux[0].off() if state & 0b01 == 0 else mux[0].on()
+    #         mux[1].off() if state & 0b10 == 0 else mux[1].on()
 
-        set_mux_state(self.mux1, c1)
-        set_mux_state(self.mux2, c2)
+    #     set_mux_state(self.mux1, c1)
+    #     set_mux_state(self.mux2, c2)
 
     def update(self, frame):
 
