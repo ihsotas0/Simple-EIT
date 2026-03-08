@@ -128,12 +128,12 @@ class SimpleEIT:
 
         # Compute conditionals numerically (+) for yes (-) for no. Magnitude of
         # conditional shows the "confidence" that the OHR is in that quadrant
-        v_raw = np.array(
+        v_raw = np.array([
             (v[1] - v[4]) * (v[2] - v[3]),  # self.display[0, 0]
             (v[4] - v[1]) * (v[0] - v[5]),  # self.display[0, 1]
             (v[4] - v[1]) * (v[5] - v[0]),  # self.display[1, 0]
             (v[1] - v[4]) * (v[3] - v[2]),
-        )  # self.display[1, 1]
+        ])  # self.display[1, 1]
 
         # The above code does this "Decision tree" numerically
 
