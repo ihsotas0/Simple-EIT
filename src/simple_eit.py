@@ -131,8 +131,6 @@ class SimpleEIT:
         self.display[:] = 0
         v = self.get_voltages()  # Get the measured voltages
 
-        # HACK: If conditional is false for both cases, the output should be (-)
-        negneg = lambda x, y: -(x*y) if x < 0 and y < 0 else x*y
 
         # Compute conditionals numerically (+) for yes (-) for no. Magnitude of
         # conditional shows the "confidence" that the OHR is in that quadrant
@@ -158,9 +156,9 @@ class SimpleEIT:
         #         self.display[1, 1] = 1
 
         # Normalize conditionals to represent a probabilty distribution
-        v_norm = softmax(v_raw)
+        # v_norm = softmax(v_raw)
 
-        self.display = v_norm.reshape(2, 2)
+        self.display = v_raw.reshape(2, 2) #v_norm.reshape(2, 2)
 
         self.im.set_data(self.display)
 
@@ -182,6 +180,11 @@ class SimpleEIT:
 def softmax(x):
     return np.exp(x - max(x)) / sum(np.exp(x - max(x)))
 
+
+# HACK: If conditional is false for both cases, the output should be (-)
+def negneg(x, y):
+    return -(x*y) if x < 0 and y < 0 else x*y
+    
 
 if __name__ == "__main__":
     app = SimpleEIT()
