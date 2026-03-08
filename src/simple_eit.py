@@ -43,7 +43,7 @@ class SimpleEIT:
 
     # def get_voltages(self):
 
-    #     v_return = np.zero(6)
+    #     v_return = np.zeros(6)
 
     #     # Configuration 2 (S is A-C)
     #     self.set_mux(0, 0)
@@ -72,7 +72,7 @@ class SimpleEIT:
     #     return v_return
 
     def get_voltages(self):
-        v_return = np.zero(6)
+        v_return = np.zeros(6)
         # (selection for MUX 1, selection for MUX 2, voltage measurement index)
         configs = [(0, 0, 1), (0, 2, 2), (1, 2, 4), (1, 0, 3), (2, 1, 5), (3, 3, 0)]
 
