@@ -87,7 +87,7 @@ class SimpleEIT:
 
         return v_return
 
-    def set_mux(self, c1, c2)
+    def set_mux(self, c1, c2):
         """ Controls selections for MUX 1 and MUX 2 using GPIO"""
         match c1:
             case 0:
