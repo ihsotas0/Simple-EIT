@@ -1,4 +1,6 @@
 import datetime
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 from gpiozero import LED
@@ -49,6 +51,8 @@ class SimpleEIT:
 
         for mux1, mux2, index in configs:
             self.set_mux(mux1, mux2)
+            print(f"Switched to MUX 1: {mux1}, MUX 2: {mux2}")
+            time.sleep(1)
             v_return[index] = self.dm.get_voltage()
 
         ct = datetime.datetime.now()
@@ -84,19 +88,21 @@ class SimpleEIT:
         )
 
         plt.show()
-        
+
         while True:
             # Get the measured voltages
             voltages = self.get_voltages()
 
             # Compute conditionals numerically (+) for yes (-) for no. Magnitude of
             # conditional shows the "confidence" that the OHR is in that quadrant
-            v_raw = np.array([
-                negneg((v[1] - v[4]), (v[2] - v[3])),  # self.display[0, 0]
-                negneg((v[4] - v[1]), (v[0] - v[5])),  # self.display[0, 1]
-                negneg((v[4] - v[1]), (v[5] - v[0])),  # self.display[1, 0]
-                negneg((v[1] - v[4]), (v[3] - v[2])),  # self.display[1, 1]
-            ])
+            v_raw = np.array(
+                [
+                    negneg((v[1] - v[4]), (v[2] - v[3])),  # self.display[0, 0]
+                    negneg((v[4] - v[1]), (v[0] - v[5])),  # self.display[0, 1]
+                    negneg((v[4] - v[1]), (v[5] - v[0])),  # self.display[1, 0]
+                    negneg((v[1] - v[4]), (v[3] - v[2])),  # self.display[1, 1]
+                ]
+            )
 
             # Normalize conditionals to represent a probabilty distribution
             v_norm = softmax(v_raw)
@@ -110,7 +116,7 @@ def softmax(x):
 
 # HACK: If conditional is false for both cases, the output should be (-)
 def negneg(x, y):
-    return -(x*y) if x < 0 and y < 0 else x*y
+    return -(x * y) if x < 0 and y < 0 else x * y
 
 
 if __name__ == "__main__":
