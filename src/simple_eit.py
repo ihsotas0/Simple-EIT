@@ -85,27 +85,23 @@ class SimpleEIT:
 
         plt.show()
         
-        try:
-            while True:
-                # Get the measured voltages
-                voltages = self.get_voltages()
+        while True:
+            # Get the measured voltages
+            voltages = self.get_voltages()
 
-                # Compute conditionals numerically (+) for yes (-) for no. Magnitude of
-                # conditional shows the "confidence" that the OHR is in that quadrant
-                v_raw = np.array([
-                    negneg((v[1] - v[4]), (v[2] - v[3])),  # self.display[0, 0]
-                    negneg((v[4] - v[1]), (v[0] - v[5])),  # self.display[0, 1]
-                    negneg((v[4] - v[1]), (v[5] - v[0])),  # self.display[1, 0]
-                    negneg((v[1] - v[4]), (v[3] - v[2])),  # self.display[1, 1]
-                ])
+            # Compute conditionals numerically (+) for yes (-) for no. Magnitude of
+            # conditional shows the "confidence" that the OHR is in that quadrant
+            v_raw = np.array([
+                negneg((v[1] - v[4]), (v[2] - v[3])),  # self.display[0, 0]
+                negneg((v[4] - v[1]), (v[0] - v[5])),  # self.display[0, 1]
+                negneg((v[4] - v[1]), (v[5] - v[0])),  # self.display[1, 0]
+                negneg((v[1] - v[4]), (v[3] - v[2])),  # self.display[1, 1]
+            ])
 
-                # Normalize conditionals to represent a probabilty distribution
-                v_norm = softmax(v_raw)
+            # Normalize conditionals to represent a probabilty distribution
+            v_norm = softmax(v_raw)
 
-                self.display = v_norm.reshape(2, 2)
-
-        except KeyboardInterrupt:
-            pass
+            self.display = v_norm.reshape(2, 2)
 
 
 def softmax(x):
