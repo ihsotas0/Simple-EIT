@@ -129,36 +129,36 @@ class SimpleEIT:
     def update(self, frame):
 
         self.display[:] = 0
-        v = self.get_voltages()  # Get the measured voltages
+        voltages = self.get_voltages()  # Get the measured voltages
 
 
         # Compute conditionals numerically (+) for yes (-) for no. Magnitude of
         # conditional shows the "confidence" that the OHR is in that quadrant
-        v_raw = np.array([
-            negneg((v[1] - v[4]), (v[2] - v[3])),  # self.display[0, 0]
-            negneg((v[4] - v[1]), (v[0] - v[5])),  # self.display[0, 1]
-            negneg((v[4] - v[1]), (v[5] - v[0])),  # self.display[1, 0]
-            negneg((v[1] - v[4]), (v[3] - v[2])),
-        ])  # self.display[1, 1]
+        # v_raw = np.array([
+        #     negneg((v[1] - v[4]), (v[2] - v[3])),  # self.display[0, 0]
+        #     negneg((v[4] - v[1]), (v[0] - v[5])),  # self.display[0, 1]
+        #     negneg((v[4] - v[1]), (v[5] - v[0])),  # self.display[1, 0]
+        #     negneg((v[1] - v[4]), (v[3] - v[2])),
+        # ])  # self.display[1, 1]
 
         # The above code does this "Decision tree" numerically
 
-        # # Decision tree
-        # if voltages[1] < voltages[4]:
-        #     if voltages[0] > voltages[5]:
-        #         self.display[0, 1] = 1
-        #     else:
-        #         self.display[1, 0] = 1
-        # else:
-        #     if voltages[2] > voltages[3]:
-        #         self.display[0, 0] = 1
-        #     else:
-        #         self.display[1, 1] = 1
+        # Decision tree
+        if voltages[1] < voltages[4]:
+            if voltages[0] > voltages[5]:
+                self.display[0, 1] = 1
+            else:
+                self.display[1, 0] = 1
+        else:
+            if voltages[2] > voltages[3]:
+                self.display[0, 0] = 1
+            else:
+                self.display[1, 1] = 1
 
         # Normalize conditionals to represent a probabilty distribution
         # v_norm = softmax(v_raw)
 
-        self.display = v_raw.reshape(2, 2) #v_norm.reshape(2, 2)
+        # self.display = v_raw.reshape(2, 2) #v_norm.reshape(2, 2)
 
         self.im.set_data(self.display)
 
@@ -184,7 +184,7 @@ def softmax(x):
 # HACK: If conditional is false for both cases, the output should be (-)
 def negneg(x, y):
     return -(x*y) if x < 0 and y < 0 else x*y
-    
+
 
 if __name__ == "__main__":
     app = SimpleEIT()
