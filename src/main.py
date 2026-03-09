@@ -1,35 +1,56 @@
-from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.animation import FuncAnimation
 
-# # Create figure
-# self.fig, self.ax = plt.subplots()
+from eit import *
 
-# self.im = self.ax.imshow(
-#     self.display, cmap="binary", origin="lower", vmin=0, vmax=1
-# )
+app = SimpleEIT()
 
-# self.ax.set_title("Location of Object of Higher Resistivity")
+# Create figure
+fig, ax = plt.subplots()
 
-# self.ax.set_xticks([0, 1])
-# self.ax.set_yticks([0, 1])
-# self.ax.set_xticklabels(["Left (D)", "Right (B)"])
-# self.ax.set_yticklabels(["Bottom (C)", "Top (A)"])
+display = np.zeros([2, 2])
 
+im = ax.imshow(display, cmap="binary", origin="lower", vmin=0, vmax=1)
 
-# self.ani = FuncAnimation(
-#     self.fig,
-#     self.update,
-#     interval=20,  # IMPORTANT: Update period in ms
-#     blit=True,
-#     cache_frame_data=False,
-# )
+ax.set_title("Confidence in Location of Object of Higher Resistivity")
 
-# plt.show()
+ax.set_xticks([0, 1])
+ax.set_yticks([0, 1])
+ax.set_xticklabels(["Left (D)", "Right (B)"])
+ax.set_yticklabels(["Bottom (C)", "Top (A)"])
+
+# To hold the text annotations
+texts = []
 
 
+def update(frame):
+    data = app.run()
 
-# def update(self, frame):
+    # Update the image data
+    im.set_data(data)
 
-#     self.im.set_data(self.display)
+    # Remove old text annotations
+    for text in texts:
+        text.remove()
 
-#     return [self.im]
+    # Clear the text list
+    texts.clear()
+
+    # Annotate each pixel with its value using np.ndenumerate
+    for (i, j), value in np.ndenumerate(data):
+        text = ax.text(j, i, f"{value:.2f}", ha="center", va="center")
+        texts.append(text)
+
+    return [im] + texts
+
+
+ani = FuncAnimation(
+    fig,
+    update,
+    interval=500,  # IMPORTANT: Update period in ms
+    blit=True,
+    cache_frame_data=False,
+)
+
+plt.show()
