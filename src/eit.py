@@ -2,9 +2,9 @@ import datetime
 import time
 
 import numpy as np
-# from gpiozero import LED
+from gpiozero import LED
 
-# from device_manager import DeviceManager
+from device_manager import DeviceManager
 
 
 class SimpleEIT:
@@ -25,7 +25,7 @@ class SimpleEIT:
         self.dm.set_voltmeter()
         self.dm.set_wavegen()
 
-        self.test = 0
+        # self.test = 0
 
     def get_voltages(self):
         v_return = np.zeros(6)
