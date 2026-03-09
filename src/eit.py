@@ -6,7 +6,7 @@ import numpy as np
 from gpiozero import LED
 from matplotlib.animation import FuncAnimation
 
-import devices
+from device_manager import DeviceManager
 
 
 class SimpleEIT:
@@ -21,7 +21,7 @@ class SimpleEIT:
         self.mux2 = (LED(13), LED(6))
 
         # Device manager
-        self.dm = devices.Devices()
+        self.dm = DeviceManager()
 
         # Configure devices
         self.dm.set_voltmeter()

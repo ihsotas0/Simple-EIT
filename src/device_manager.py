@@ -1,7 +1,7 @@
 import pyvisa
 
 
-class Devices:
+class DeviceManager:
     """Encapsulates PyVISA for better usability."""
 
     def __init__(self):
@@ -50,17 +50,34 @@ class Devices:
             self.voltmeter = rm.open_resource(keysight_instruments[0])
             print("Done.")
 
-    def set_voltmeter(self, command="CONF:VOLT:AC"):
+    def set_voltmeter(self, command="CONF:VOLT:AC", plc=0.02):
+        # Basic setup
+        self.voltmeter.write("*RST")
+        self.voltmeter.write("*CLS")  # Clear error queue
         self.voltmeter.write(command)
 
-    def set_wavegen(self, command="APPL:SIN 5E3,1,0.5"):
+        # Fast measurement optimizations
+        self.voltmeter.write(f"VOLT:AC:NPLC {plc}") # Integration time in Power Line Cycles
+        self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")  # Disable autozero for speed
+
+    def set_wavegen(self, freq=5e3, v_pp=1, offset=0.5):
+        command=f"APPL:SIN {freq},{v_pp},{offset}"
         self.wavegen.write(command)
 
     def get_voltage(self):
-        return float(self.voltmeter.query("read?"))
+        return float(self.voltmeter.query("READ?"))
 
 
 class DeviceNotFoundError(Exception):
     """Raised when the requested device cannot be found."""
 
     pass
+
+if __name__ == "__main__":
+    
+    # For testing
+    dm = DeviceManager()
+    dm.set_voltmeter()
+    dm.set_wavegen()
+    for i in range(10):
+        print(f"{i}: dm.get_voltage()")
