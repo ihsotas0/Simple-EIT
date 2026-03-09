@@ -57,11 +57,13 @@ class DeviceManager:
         self.voltmeter.write(command)
 
         # Fast measurement optimizations
-        self.voltmeter.write(f"VOLT:AC:NPLC {plc}") # Integration time in Power Line Cycles
+        self.voltmeter.write(
+            f"VOLT:AC:NPLC {plc}"
+        )  # Integration time in Power Line Cycles
         self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")  # Disable autozero for speed
 
     def set_wavegen(self, freq=5e3, v_pp=1, offset=0.5):
-        command=f"APPL:SIN {freq},{v_pp},{offset}"
+        command = f"APPL:SIN {freq},{v_pp},{offset}"
         self.wavegen.write(command)
 
     def get_voltage(self):
@@ -73,11 +75,13 @@ class DeviceNotFoundError(Exception):
 
     pass
 
+
+"""Testing"""
+
 if __name__ == "__main__":
-    
     # For testing
     dm = DeviceManager()
     dm.set_voltmeter()
     dm.set_wavegen()
     for i in range(10):
-        print(f"{i}: dm.get_voltage()")
+        print(f"{i}: {dm.get_voltage():6f}")
