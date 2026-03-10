@@ -1,1 +1,0 @@
-{"rule":"PASSIVE_VOICE","sentence":"^\\QThe code was labelled correctly for which GPIO pin lead to A0 and A1 for each board, but the\\E$"}
