@@ -7,7 +7,7 @@ date: "March 10, 2026"
 ---
 
 <!-- Use this command to make the report: -->
-<!-- pandoc -H img_fix.tex -f markdown+table_captions midreport.md -o MidReport.pdf -->
+<!-- pandoc -H img_fix.tex -f markdown+table_captions midreport.md -o EIT_Mid_Report.pdf -->
 
 Electrical impedance tomography is a method for medical imaging which visualizes
 the internal resistivity of the human body, namely for real-time monitoring of
@@ -34,7 +34,7 @@ For our initial experiment, we wanted to see if we could measure a difference in
 voltage between nodes in an aqueous solution at all. We used our Analog
 Discovery kits to do this:
 
-![Simple Proof-of-Concept](exp_1.jpg){width=50%}
+![Simple Proof-of-Concept](exp_1.png){width=50%}
 
 Two of our team members reproduced this experiment independently. We found that
 when an object (eraser) is placed in the medium, the voltage at each of the
@@ -179,7 +179,7 @@ switching.
 
 A separate DC power supply was connected to the boards to provide 15 V.
 
-![DC Power Supply](exp_3_rig_with_leads.jpg){width=50%}
+![DC Power Supply](exp_3_power_supply.jpg){width=50%}
 
 ## Ground Issue
 
