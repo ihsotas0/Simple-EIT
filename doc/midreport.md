@@ -95,14 +95,13 @@ External Python libraries: PyVISA, gpiozero, Matplotlib, NumPy.
 # Experiment 3
 
 Our most recent experiment involved a full demonstration of the device. We used
-our second test rig prototype and an eraser for the OHR (as we have used
+our second test rig prototype and an eraser as the OHR (as we have used
 previously).
 
 ![New Test Rig and Leads](exp_3_rig_with_leads.jpg){width=50%}
 
 It was previously found how to wire the nodes to the MUX boards to ensure each
-configuration could be switched to. To start with, we made a table of where the
-positive and negative terminals of the wavegen and voltmeter connected to the
+configuration could be easily switched between. To start with, we made a table of where the positive and negative terminals of the wavegen and voltmeter connected to the
 nodes of the device for each of the 6 configurations:
 
 | Configuration | $S^+$ | $S^-$ | $V^+$ | $V^-$ |
@@ -116,7 +115,7 @@ nodes of the device for each of the 6 configurations:
 
 Table: Wavegen and Voltmeter Nodes for Each Configuration
 
-Then, we made a routing table for each MUX board. The MUX36D04EVM-PDK boards we
+Then, we made a table of orientations for each MUX board. The MUX36D04EVM-PDK boards we
 were given by Chuck gave us just enough room to get each configuration. The
 MUX36D04 contains two MUXs, each set to the same selection for any input. Each
 MUX36D04EVM-PDK contains one MUX36D04. This constricted how we wired the device,
@@ -130,7 +129,7 @@ and the 4 outputs were connected to any of the four nodes of the device:
 | S3                        | C             | A             |
 | S4                        | A             | C             |
 
-Table: Board 1 Routing Table
+Table: Board 1 Orientation Table
 
 | Board Selection | $S^-$ (MUX 1) | $V^-$ (MUX 2) |
 |---------------------------|---------------|---------------|
@@ -139,7 +138,7 @@ Table: Board 1 Routing Table
 | S3                        | D             | C             |
 | S4                        | B             | D             |
 
-Table: Board 2 Routing Table
+Table: Board 2 Orientation Table
 
 The selection is controlled by two inputs, A0 and A1:
 
@@ -186,20 +185,19 @@ A separate DC power supply was connected to the boards to provide 15 V.
 We quickly realized that both MUX boards were not switching configurations by
 looking at the voltmeter output collected by the Raspberry Pi, which never
 changed. So, we set up an experiment to see if the GPIO pins created a high
-enough voltage to be registered as a 1 by the boards (2.0 V) with respect to the
-boards' ground nodes.
+enough voltage to be registered as a 1 by the boards (2.0 V) with repect to the aforementioned DC supply.
 
 ![RPi #1: MUX Control Leads for Testing](exp_3_mux_control_leads.jpg){width=50%}
 
 Running the experiment for each configuration to additionally test if A0 and A1
 where being set correctly for each configuration, in the order 2, 3, 5, 4, 6, 0
-(this order reduced the number of MUX switches needed), we found that the
+(this order was optimal to reduce MUX switches needed), we found that the
 voltage did not pass the high logic voltage threshold, and that A0 and A1 were
 swapped.
 
 ![RPi #1: Grounding Experiment 1](exp_3_ground_issue_1.jpg){width=50%}
 
-By shorting the Raspberry Pi's ground with the boards, we fixed this issue.
+By nodally sharing the Raspberry Pi's ground with the MUX boards, we fixed this issue.
 
 ![RPi #1: Grounding Experiment 2](exp_3_ground_issue_2.jpg){width=50%}
 
@@ -216,8 +214,7 @@ board using its own ground and power supply to verify other parts of our device:
 
 Once we discoverd the actual issue with pins A0 and A1, and the ground issue, we
 decided to plug the Raspberry Pi back in. The board's power supply was 15 V, and
-its lead was next to the leads for A0 and A1 for both boards. Inevitably, an
-unnamed teammate plugged the 15 V lead into the Raspberry Pi, killing it
+its lead was next to the leads for A0 and A1 for both boards. Inevitably, a teammate plugged the 15 V lead into the Raspberry Pi, killing it
 instantly. The live wire is shown in the image below (it is the only lead
 connected to the breadboard):
 
