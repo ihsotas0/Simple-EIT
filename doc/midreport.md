@@ -4,6 +4,7 @@ author: |
   Team Members: Jonah Spector, Connor Cassidy, Christian Rayner  
   EIR Mentor: Chuck Duey (Approved)
 date: "March 10, 2026"
+geometry: margin=3cm
 ---
 
 <!-- Use this command to make the report: -->
