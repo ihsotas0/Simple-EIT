@@ -101,8 +101,9 @@ previously).
 ![New Test Rig and Leads](exp_3_rig_with_leads.jpg){width=50%}
 
 It was previously found how to wire the nodes to the MUX boards to ensure each
-configuration could be easily switched between. To start with, we made a table of where the positive and negative terminals of the wavegen and voltmeter connected to the
-nodes of the device for each of the 6 configurations:
+configuration could be easily switched between. To start with, we made a table
+of where the positive and negative terminals of the wavegen and voltmeter
+connected to the nodes of the device for each of the 6 configurations:
 
 | Configuration | $S^+$ | $S^-$ | $V^+$ | $V^-$ |
 |---------------|-------|-------|-------|-------|
@@ -115,12 +116,14 @@ nodes of the device for each of the 6 configurations:
 
 Table: Wavegen and Voltmeter Nodes for Each Configuration
 
-Then, we made a table of orientations for each MUX board. The MUX36D04EVM-PDK boards we
-were given by Chuck gave us just enough room to get each configuration. The
-MUX36D04 contains two MUXs, each set to the same selection for any input. Each
-MUX36D04EVM-PDK contains one MUX36D04. This constricted how we wired the device,
-where the voltmeter/wavegen terminals were connected to the input of the MUX,
-and the 4 outputs were connected to any of the four nodes of the device:
+Then, we made a table showing which board nodes (i.e. S1A, S1B) connected to
+which device nodes (i.e. A, B, C, D) for each MUX board. The MUX36D04EVM-PDK
+boards we were given by our EIR mentor gave us just enough room to get each
+configuration. The MUX36D04 contains two MUXs, each set to the same selection
+for any input. Each MUX36D04EVM-PDK contains one MUX36D04. This constricted how
+we wired the device, where the voltmeter/wavegen terminals were connected to the
+input of the MUX, and the 4 outputs were connected to any of the four nodes of
+the device:
 
 | Board Selection | $S^+$ (MUX 1) | $V^+$ (MUX 2) |
 |---------------------------|---------------|---------------|
@@ -129,7 +132,7 @@ and the 4 outputs were connected to any of the four nodes of the device:
 | S3                        | C             | A             |
 | S4                        | A             | C             |
 
-Table: Board 1 Orientation Table
+Table: Board 1 Routing Table
 
 | Board Selection | $S^-$ (MUX 1) | $V^-$ (MUX 2) |
 |---------------------------|---------------|---------------|
@@ -138,7 +141,7 @@ Table: Board 1 Orientation Table
 | S3                        | D             | C             |
 | S4                        | B             | D             |
 
-Table: Board 2 Orientation Table
+Table: Board 2 Routing Table
 
 The selection is controlled by two inputs, A0 and A1:
 
@@ -151,8 +154,8 @@ The selection is controlled by two inputs, A0 and A1:
 
 Table: Board Control Input
 
-Using these tables, we can get all 6 configurations. The inputs (A0, A1) for each board
-to get each configuration:
+Using these tables, we can get all 6 configurations. The inputs (A0, A1) for
+each board to get each configuration:
 
 | Configuration | Board 1 Input | Board 2 Input |
 |---------------|---------------|---------------|
@@ -174,7 +177,8 @@ test rig by 16 leads, which were then connected to the voltmeter and wavegen.
 The Raspberry Pi GPIO pins originally connected directly to the MUX boards for
 switching. 
 
-![RPi #1: Wiring (Top View), with Ground Issue](exp_3_old_board_testing.jpg){width=50%}
+![RPi #1: Wiring (Top View), with Ground
+Issue](exp_3_old_board_testing.jpg){width=50%}
 
 A separate DC power supply was connected to the boards to provide 15 V.
 
@@ -185,7 +189,8 @@ A separate DC power supply was connected to the boards to provide 15 V.
 We quickly realized that both MUX boards were not switching configurations by
 looking at the voltmeter output collected by the Raspberry Pi, which never
 changed. So, we set up an experiment to see if the GPIO pins created a high
-enough voltage to be registered as a 1 by the boards (2.0 V) with repect to the aforementioned DC supply.
+enough voltage to be registered as a 1 by the boards (2.0 V) with repect to the
+aforementioned DC supply.
 
 ![RPi #1: MUX Control Leads for Testing](exp_3_mux_control_leads.jpg){width=50%}
 
@@ -197,7 +202,8 @@ swapped.
 
 ![RPi #1: Grounding Experiment 1](exp_3_ground_issue_1.jpg){width=50%}
 
-By nodally sharing the Raspberry Pi's ground with the MUX boards, we fixed this issue.
+By connecting the Raspberry Pi's ground with the MUX boards, we fixed this
+issue.
 
 ![RPi #1: Grounding Experiment 2](exp_3_ground_issue_2.jpg){width=50%}
 
@@ -214,9 +220,10 @@ board using its own ground and power supply to verify other parts of our device:
 
 Once we discoverd the actual issue with pins A0 and A1, and the ground issue, we
 decided to plug the Raspberry Pi back in. The board's power supply was 15 V, and
-its lead was next to the leads for A0 and A1 for both boards. Inevitably, a teammate plugged the 15 V lead into the Raspberry Pi, killing it
-instantly. The live wire is shown in the image below (it is the only lead
-connected to the breadboard):
+its lead was next to the leads for A0 and A1 for both boards. Inevitably, a
+teammate plugged the 15 V lead into the Raspberry Pi, killing it instantly. The
+live wire is shown in the image below (it is the only lead connected to the
+breadboard):
 
 ![Deadly 15 V Lead](exp_3_dead_board_live_wire_top_view.jpg){width=50%}
 
@@ -224,8 +231,8 @@ connected to the breadboard):
 
 ![Fried Raspberry Pi (Top View)](exp_3_dead_board_top_view.jpg){width=50%}
 
-This was only a minor set back, however, as another classmate had a
-spare Raspberry Pi for us to use.
+This was only a minor set back, however, as another classmate had a spare
+Raspberry Pi for us to use.
 
 ## New Raspberry Pi
 
@@ -243,15 +250,32 @@ which currently take around 1 second per configuration.
 The issue we are currently having is that the voltage measurements don't predict
 the location accurately using our conditional algorithm:
 
-| Real OHR Location | Predicited OHR Location |
+| Real OHR Location | Predicted OHR Location |
 |-------------------|-------------------------|
 | AD                | AD                      |
 | BC                | CD, AD, AB              |
 | CD                | AB                      |
 | AB                | AB                      |
 
+Table: Experiment 3 Results
+
 After spring break, we plan to fix this issue and improve the device's voltage
 measurement speed (the primary bottleneck).
+
+# Conclusion
+
+In the 5 weeks since submitting our project proposal, we managed to achieve all
+of our goals as set in the deadlines table. Despite encountering hardware
+setbacks (including a grounding issue that required connecting the Raspberry Pi
+ground to the MUX boards and an accidental 15 V surge that destroyed the first
+Raspberry Pi) we successfully rebuilt the system and have a fully functional
+test rig, multiplexer control, and PyVISA-based measurement automation. The
+conditional algorithm correctly identifies the object’s location for two of the
+four quadrants (AD and AB) but still misclassifies BC and CD. After spring
+break, we will focus on debugging the algorithm, reducing the measurement time
+(currently ~1 s), and integrating a real‑time four‑pixel visualizati on. These
+improvements will bring us closer to a complete working demo by the end of the
+semester.
 
 # Other Tables
 
@@ -259,8 +283,8 @@ measurement speed (the primary bottleneck).
 |---------------------------------------------------------------|:-----------------|
 | Keysight digital multimeter (34470A)                          | C105             |
 | Agilent waveform generator (33600A)                           | C105             |
-| (16 \+ 2 \+ 2 \+ 4\) x Banana-to-hook/hook-to-plug test leads | C105             |
-| 2 x MUX36D04EVM-PDK                                           | Borrowed, Chuck  |
+| (16 + 2 + 2 + 4) x Banana-to-hook/hook-to-plug test leads | C105             |
+| 2 x MUX36D04EVM-PDK                                           | Borrowed, EIR Mentor  |
 | 4 x stainless steel electrodes                                | Given for Free   |
 | Raspberry Pi 3B                                               | Borrowed, Friend |
 | 3D printed test rig, OHR, and other plastic apparatus         | I2P Lab, Free    |
