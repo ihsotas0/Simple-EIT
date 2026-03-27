@@ -1,4 +1,5 @@
 import pyvisa
+import time
 
 KEYSIGHT_VID = "10893"
 AGILENT_VID = "2391"
@@ -110,11 +111,13 @@ class DeviceManager:
         except Exception as e:
             raise RuntimeError(f"Failed to initialize voltmeter: {e}")
 
-    def set_voltmeter(self, command = "CONF:VOLT:AC", plc = 0.02):
+    def set_voltmeter(self, command = "CONF:VOLT:AC", plc = 0.02, samples = 50):
         try:
             self.voltmeter.write(command)
+            # Power line cycles are reduced to reduce measurement
             self.voltmeter.write(f"VOLT:AC:NPLC {plc}")
             self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")
+            self.voltmeter.write(f"SAMP:COUN {samples}")
         except Exception as e:
             raise RuntimeError(f"Failed to configure voltmeter: {e}")
 
@@ -122,12 +125,31 @@ class DeviceManager:
         try:
             command = f"APPL:SIN {freq},{v_pp},{offset}"
             self.wavegen.write(command)
+            self.wavegen.write("")
         except Exception as e:
             raise RuntimeError(f"Failed to configure wave generator: {e}")
 
     def get_voltage(self):
         try:
-            return float(self.voltmeter.query("READ?"))
+            # Start clock
+            start_time = time.time()
+            
+            self.voltmeter.write("READ?")
+            response = self.voltmeter.read()
+            
+            # End Clock
+            measurement_time = time.time() - start_time
+            
+            # Get values from VISA response
+            values = [float(x) for x in response.split(',')]
+
+            # Samples/second
+            rate = len(values) / measurement_time
+            print(f"Fast measurement: {rate:.0f} samples/second")
+            
+            # Return average of samples
+            return sum(values)/len(values)
+        
         except Exception as e:
             raise RuntimeError(f"Voltage read failed: {e}")
 
