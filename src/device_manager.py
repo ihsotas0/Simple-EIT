@@ -1,87 +1,150 @@
 import pyvisa
 
+KEYSIGHT_VID = "10893"
+AGILENT_VID = "2391"
 
 class DeviceManager:
-    """Encapsulates PyVISA for better usability."""
+    """Encapsulates PyVISA for robust instrument management."""
 
     def __init__(self):
-
         print("Initializing devices...")
-        fail = 0
 
-        # Get USB devices
-        rm = pyvisa.ResourceManager()
-        resources = rm.list_resources()
+        self.rm = pyvisa.ResourceManager()
+        self.wavegen = None
+        self.voltmeter = None
 
-        # Find Keysight instruments (Vendor ID: 10893)
-        keysight_instruments = [r for r in resources if "10893" in r]
+        resources = self.rm.list_resources()
 
-        # Find Agilent instruments (Vendor ID: 2391)
-        agilent_instruments = [r for r in resources if "2391" in r]
+        # Select devices given VID
+        keysight_resources = [r for r in resources if KEYSIGHT_VID in r]
+        agilent_resources = [r for r in resources if AGILENT_VID in r]
 
-        # For debugging
-        print("Found Keysight instruments:")
-        for instrument in keysight_instruments:
+        fail = False
+
+        # Probe devices and see if there's an error
+        fail |= self._probe_instruments(keysight_resources, "Keysight")
+        fail |= self._probe_instruments(agilent_resources, "Agilent")
+
+        if not keysight_resources or not agilent_resources or fail:
+            self.close()
+            raise RuntimeError("Can't initialize devices!")
+
+        # Select devices
+        self.voltmeter = self._find_by_idn(keysight_resources, "KEYSIGHT")
+        self.wavegen = self._find_by_idn(agilent_resources, "AGILENT")
+
+        if self.voltmeter is None or self.wavegen is None:
+            self.close()
+            raise RuntimeError("Could not identify required instruments via IDN.")
+
+        # Set timeouts (ms)
+        self.voltmeter.timeout = 5000
+        self.wavegen.timeout = 5000
+
+        print("Devices initialized successfully.")
+
+    # Context Manager
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+
+    # Close devices cleanly
+    def close(self):
+        print("Closing device connections...")
+        try:
+            if self.wavegen:
+                self.wavegen.close()
+        except Exception as e:
+            print(f"Error closing wavegen: {e}")
+
+        try:
+            if self.voltmeter:
+                self.voltmeter.close()
+        except Exception as e:
+            print(f"Error closing voltmeter: {e}")
+
+        try:
+            if self.rm:
+                self.rm.close()
+        except Exception as e:
+            print(f"Error closing ResourceManager: {e}")
+
+    # Initialization helpers
+    def _probe_instruments(self, instruments, label):
+        print(f"Found {label} instruments:")
+        failed = False
+
+        for resource in instruments:
             try:
-                inst = rm.open_resource(instrument)
+                inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
-                print(f"  {instrument}\n  {idn.strip()}")
+                print(f"{resource} -> {idn.strip()}")
                 inst.close()
-            except:
-                print(f"  {instrument}\n Connection failed")
-                fail = 1
+            except Exception as e:
+                print(f"{resource} -> Connection failed: {e}")
+                failed = True
 
-        print("Found Agilent instruments:")
-        for instrument in agilent_instruments:
+        return failed
+
+    def _find_by_idn(self, resources, keyword):
+        for resource in resources:
             try:
-                inst = rm.open_resource(instrument)
+                inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
-                print(f"  {instrument}\n  {idn.strip()}")
+                if keyword.upper() in idn.upper():
+                    print(f"Selected {resource} ({idn.strip()})")
+                    return inst
                 inst.close()
-            except:
-                print(f"  {instrument}\n Connection failed")
-                fail = 1
+            except Exception as e:
+                print(f"Error identifying {resource}: {e}")
+        return None
 
-        # Check if devices are not connected
-        if fail == 1 or len(keysight_instruments) == 0 or len(agilent_instruments) == 0:
-            raise DeviceNotFoundError("Can't initialize devices!")
-        else:
-            self.wavegen = rm.open_resource(agilent_instruments[0])
-            self.voltmeter = rm.open_resource(keysight_instruments[0])
-            print("Done.")
+    # API
+    def initialize_voltmeter(self):
+        """Perform one-time reset/clear."""
+        try:
+            self.voltmeter.write("*RST")
+            self.voltmeter.write("*CLS")
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize voltmeter: {e}")
 
-    def set_voltmeter(self, command="CONF:VOLT:AC", plc=0.02):
-        # Basic setup
-        self.voltmeter.write("*RST")
-        self.voltmeter.write("*CLS")  # Clear error queue
-        self.voltmeter.write(command)
+    def set_voltmeter(self, command = "CONF:VOLT:AC", plc = 0.02):
+        try:
+            self.voltmeter.write(command)
+            self.voltmeter.write(f"VOLT:AC:NPLC {plc}")
+            self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")
+        except Exception as e:
+            raise RuntimeError(f"Failed to configure voltmeter: {e}")
 
-        # Fast measurement optimizations
-        self.voltmeter.write(
-            f"VOLT:AC:NPLC {plc}"
-        )  # Integration time in Power Line Cycles
-        self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")  # Disable autozero for speed
-
-    def set_wavegen(self, freq=5e3, v_pp=1, offset=0.5):
-        command = f"APPL:SIN {freq},{v_pp},{offset}"
-        self.wavegen.write(command)
+    def set_wavegen(self, freq = 5e3, v_pp = 1, offset = 0.5):
+        try:
+            command = f"APPL:SIN {freq},{v_pp},{offset}"
+            self.wavegen.write(command)
+        except Exception as e:
+            raise RuntimeError(f"Failed to configure wave generator: {e}")
 
     def get_voltage(self):
-        return float(self.voltmeter.query("READ?"))
+        try:
+            return float(self.voltmeter.query("READ?"))
+        except Exception as e:
+            raise RuntimeError(f"Voltage read failed: {e}")
 
 
-class DeviceNotFoundError(Exception):
-    """Raised when the requested device cannot be found."""
-
-    pass
-
-
-"""Testing"""
-
+# Testing
 if __name__ == "__main__":
-    # For testing
-    dm = DeviceManager()
-    dm.set_voltmeter()
-    dm.set_wavegen()
-    for i in range(10):
-        print(f"{i}: {dm.get_voltage():6f}")
+    try:
+        with DeviceManager() as dm:
+            dm.initialize_voltmeter()
+            dm.set_voltmeter()
+            dm.set_wavegen()
+
+            for i in range(10):
+                voltage = dm.get_voltage()
+                print(f"{i}: {voltage:.6f}")
+
+    except RuntimeError as e:
+        print(f"Expected error: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
