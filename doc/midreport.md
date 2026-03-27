@@ -2,7 +2,7 @@
 title: "ECE 202 Mid-report: Simple EIT"
 author: |
   Team Members: Jonah Spector, Connor Cassidy, Christian Rayner  
-  EIR Mentor: Chuck Duey (Approved)
+  EIR Mentor: Chuck Duey (Awaiting Approval Since March 10)
 date: "March 10, 2026"
 geometry: margin=3cm
 ---
