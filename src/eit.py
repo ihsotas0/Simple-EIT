@@ -47,8 +47,8 @@ class SimpleEIT:
         for s1, s2, index in configs:
             
             # Start MUX switch (ground measurement leads)
-            mux_toggle[0].off()
-            mux_toggle[1].off()
+            self.mux_toggle[0].off()
+            self.mux_toggle[1].off()
 
             # Switch MUX state
             set_mux_state(self.mux1, s1)  # Apply state to mux1
@@ -56,15 +56,15 @@ class SimpleEIT:
             print(f"Switched MUX 1: S{s1}, MUX 2: S{s2}, Config: {index}")
             
             # End MUX switch (turn measurement leads on)
-            mux_toggle[0].on()
-            mux_toggle[1].on()
+            self.mux_toggle[0].on()
+            self.mux_toggle[1].on()
             
             # Get voltage, assign to index (V_AB, V_AD, V_BC, V_CD, V_AC, V_BD)
             v_return[index - 1] = self.dm.get_voltage()
 
         ct = datetime.datetime.now()
 
-        print(f"{ct}: Measured voltages: {v_return:6f}")
+        print(f"{ct}: Measured voltages: {v_return}")
 
         return v_return
 
@@ -87,12 +87,13 @@ class SimpleEIT:
         #     ]
         # )
 
-        index = lst[:4].index(sorted(lst[:4], reverse=True)[1])
-        print(index)
+        index = np.argsort(arr[:4])[-2]
+
+        v_norm = np.zeros(4)
+        v_norm[index] = 1
 
         # Normalize conditionals to represent a probability distribution
-        #v_norm = softmax(v_raw)
-
+        v_norm = softmax(v_raw)
 
         # Matrix represents this:
         #
@@ -100,7 +101,7 @@ class SimpleEIT:
         #  CD   BC
         #
 
-        #return v_norm.reshape(2, 2)
+        return v_norm.reshape(2, 2)
 
 # Helper functions
 

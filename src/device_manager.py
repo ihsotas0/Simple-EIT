@@ -39,8 +39,8 @@ class DeviceManager:
             raise RuntimeError("Could not identify required instruments via IDN.")
 
         # Set timeouts (ms)
-        self.voltmeter.timeout = 5000
-        self.wavegen.timeout = 5000
+        #self.voltmeter.timeout = 5000
+        #self.wavegen.timeout = 5000
 
         print("Devices initialized successfully.")
 
@@ -117,11 +117,11 @@ class DeviceManager:
             # Power line cycles are reduced to reduce measurement
             self.voltmeter.write(f"VOLT:AC:NPLC {plc}")
             self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")
-            self.voltmeter.write(f"SAMP:COUN {samples}")
+            #self.voltmeter.write(f"SAMP:COUN {samples}")
         except Exception as e:
             raise RuntimeError(f"Failed to configure voltmeter: {e}")
 
-    def set_wavegen(self, freq = 5e3, v_pp = 1, offset = 0.5):
+    def set_wavegen(self, freq = 1e3, v_pp = 2.5, offset = 2.5):
         try:
             command = f"APPL:SIN {freq},{v_pp},{offset}"
             self.wavegen.write(command)
@@ -131,22 +131,12 @@ class DeviceManager:
 
     def get_voltage(self):
         try:
-            # Start clock
-            start_time = time.time()
-            
             self.voltmeter.write("READ?")
             response = self.voltmeter.read()
-            
-            # End Clock
-            measurement_time = time.time() - start_time
-            
+
             # Get values from VISA response
             values = [float(x) for x in response.split(',')]
 
-            # Samples/second
-            rate = len(values) / measurement_time
-            print(f"Fast measurement: {rate:.0f} samples/second")
-            
             # Return average of samples
             return sum(values)/len(values)
         
