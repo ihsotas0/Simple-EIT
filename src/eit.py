@@ -92,16 +92,16 @@ class SimpleEIT:
 
         match index:
             case 0:
-                v_raw = [0, 1, 0, 0]
+                v_raw = np.array([0, 0, 0, 1])
             case 1:
-                v_raw = [1, 0, 0, 0]
+                v_raw = np.array([0, 0, 1, 0])
             case 2:
-                v_raw = [0, 0, 0, 1]
+                v_raw = np.array([0, 1, 0, 0])
             case 3:
-                v_raw = [0, 0, 1, 0]
+                v_raw = np.array([1, 0, 0, 0])
 
         # Normalize conditionals to represent a probability distribution
-        v_norm = softmax(v_raw)
+        v_norm = v_raw #softmax(v_raw)
 
         # Matrix represents this:
         #
