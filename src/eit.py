@@ -87,10 +87,18 @@ class SimpleEIT:
         #     ]
         # )
 
-        index = np.argsort(arr[:4])[-2]
+        index = np.argsort(v[:4])[-2]
+        # 0: AB, 1: AD, 2: BC, 3: CD
 
-        v_norm = np.zeros(4)
-        v_norm[index] = 1
+        match index:
+            case 0:
+                v_raw = [0, 1, 0, 0]
+            case 1:
+                v_raw = [1, 0, 0, 0]
+            case 2:
+                v_raw = [0, 0, 0, 1]
+            case 3:
+                v_raw = [0, 0, 1, 0]
 
         # Normalize conditionals to represent a probability distribution
         v_norm = softmax(v_raw)
