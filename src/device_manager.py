@@ -1,8 +1,8 @@
 import pyvisa
-import time
 
 KEYSIGHT_VID = "10893"
 AGILENT_VID = "2391"
+
 
 class DeviceManager:
     """Encapsulates PyVISA for robust instrument management."""
@@ -22,7 +22,7 @@ class DeviceManager:
 
         fail = False
 
-        # Probe devices and see if there's an error
+        # Probe devices and check for error
         fail |= self._probe_instruments(keysight_resources, "Keysight")
         fail |= self._probe_instruments(agilent_resources, "Agilent")
 
@@ -39,8 +39,8 @@ class DeviceManager:
             raise RuntimeError("Could not identify required instruments via IDN.")
 
         # Set timeouts (ms)
-        #self.voltmeter.timeout = 5000
-        #self.wavegen.timeout = 5000
+        # self.voltmeter.timeout = 5000
+        # self.wavegen.timeout = 5000
 
         print("Devices initialized successfully.")
 
@@ -72,7 +72,7 @@ class DeviceManager:
         except Exception as e:
             print(f"Error closing ResourceManager: {e}")
 
-    # Initialization helpers
+    # Helper functions
     def _probe_instruments(self, instruments, label):
         print(f"Found {label} instruments:")
         failed = False
@@ -104,28 +104,28 @@ class DeviceManager:
 
     # API
     def initialize_voltmeter(self):
-        """Perform one-time reset/clear."""
         try:
             self.voltmeter.write("*RST")
             self.voltmeter.write("*CLS")
         except Exception as e:
             raise RuntimeError(f"Failed to initialize voltmeter: {e}")
 
-    def set_voltmeter(self, command = "CONF:VOLT:AC", plc = 0.02, samples = 50):
+    def set_voltmeter(self, command="CONF:VOLT:AC", plc=0.02, samples=50):
         try:
             self.voltmeter.write(command)
-            # Power line cycles are reduced to reduce measurement
+            # Power line cycles are reduced to reduce measurement time
             self.voltmeter.write(f"VOLT:AC:NPLC {plc}")
             self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")
-            #self.voltmeter.write(f"SAMP:COUN {samples}")
+            # self.voltmeter.write(f"SAMP:COUN {samples}")
         except Exception as e:
             raise RuntimeError(f"Failed to configure voltmeter: {e}")
 
-    def set_wavegen(self, freq = 1e3, v_pp = 2.5, offset = 2.5):
+    # WARNING: Models trained on data with these parameters for wavegen!
+    # Don't touch unless absolutely needed
+    def set_wavegen(self, freq=1e3, v_pp=2.5, offset=2.5):
         try:
             command = f"APPL:SIN {freq},{v_pp},{offset}"
             self.wavegen.write(command)
-            self.wavegen.write("")
         except Exception as e:
             raise RuntimeError(f"Failed to configure wave generator: {e}")
 
@@ -134,12 +134,12 @@ class DeviceManager:
             self.voltmeter.write("READ?")
             response = self.voltmeter.read()
 
-            # Get values from VISA response
-            values = [float(x) for x in response.split(',')]
+            # Get values from VISA response (for n samples)
+            values = [float(x) for x in response.split(",")]
 
             # Return average of samples
-            return sum(values)/len(values)
-        
+            return sum(values) / len(values)
+
         except Exception as e:
             raise RuntimeError(f"Voltage read failed: {e}")
 
