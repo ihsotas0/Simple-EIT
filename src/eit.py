@@ -73,21 +73,25 @@ class SimpleEIT:
     def run(self):
 
         # Get the measured voltages
+        # (V_AB, V_AD, V_BC, V_CD, V_AC, V_BD)
         v = self.get_voltages()
 
         # Compute conditionals numerically (+) for yes (-) for no. Magnitude of
         # conditional shows the "confidence" that the OHR is in that quadrant
-        v_raw = np.array(
-            [
-                negneg((v[] - v[]), (v[] - v[])),  # display[0, 0]
-                negneg((v[] - v[]), (v[] - v[])),  # display[0, 1]
-                negneg((v[] - v[]), (v[] - v[])),  # display[1, 0]
-                negneg((v[] - v[]), (v[] - v[])),  # display[1, 1]
-            ]
-        )
+        # v_raw = np.array(
+        #     [
+        #         negneg((v[] - v[]), (v[] - v[])),  # display[0, 0]
+        #         negneg((v[] - v[]), (v[] - v[])),  # display[0, 1]
+        #         negneg((v[] - v[]), (v[] - v[])),  # display[1, 0]
+        #         negneg((v[] - v[]), (v[] - v[])),  # display[1, 1]
+        #     ]
+        # )
+
+        index = lst[:4].index(sorted(lst[:4], reverse=True)[1])
+        print(index)
 
         # Normalize conditionals to represent a probability distribution
-        v_norm = softmax(v_raw)
+        #v_norm = softmax(v_raw)
 
 
         # Matrix represents this:
@@ -96,7 +100,7 @@ class SimpleEIT:
         #  CD   BC
         #
 
-        return v_norm.reshape(2, 2)
+        #return v_norm.reshape(2, 2)
 
 # Helper functions
 
