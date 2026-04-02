@@ -22,7 +22,6 @@ class SimpleEIT:
         self.dm = DeviceManager()
 
         # Configure devices
-        self.dm.initialize_voltmeter()
         self.dm.set_voltmeter()
         self.dm.set_wavegen()
 
@@ -61,7 +60,7 @@ class SimpleEIT:
             # (V_AB, V_AD, V_BC, V_CD, V_AC, V_BD)
             v_return[index - 1] = self.dm.get_voltage()
 
-        print(f"Measured voltages: {v_return}")
+        print(f"Measured voltages: {v_return:.3f}")
 
         return v_return
 
@@ -74,14 +73,10 @@ class SimpleEIT:
         # Use classifier
         v_raw = self.model(v)
 
-        # Normalize to represent probability distribution
-        v_norm = softmax(v_raw)
-
         # Matrix OHR locations:
         # [AD AB]
         # [CD BC]
-
-        return v_norm.reshape(2, 2)
+        return v_raw.reshape(2, 2)
 
     # Context Manager
     def __enter__(self):
@@ -96,6 +91,7 @@ class SimpleEIT:
     # Helper functions
 
     def _set_mux_state(mux, state):
+        # mux = (A0, A1)
         match state:
             case 1:
                 mux[0].off()
@@ -113,7 +109,6 @@ class SimpleEIT:
 
 # Testing
 if __name__ == "__main__":
-    # For testing
     app = SimpleEIT()
     for i in range(10):
         print(f"{i}: {app.run()}")

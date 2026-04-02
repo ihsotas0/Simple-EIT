@@ -36,7 +36,7 @@ class DeviceManager:
 
         if self.voltmeter is None or self.wavegen is None:
             self.close()
-            raise RuntimeError("Could not identify required instruments via IDN.")
+            raise RuntimeError("Could not identify required instruments via IDN!")
 
         # Set timeouts (ms)
         # self.voltmeter.timeout = 5000
@@ -103,26 +103,23 @@ class DeviceManager:
         return None
 
     # API
-    def initialize_voltmeter(self):
+    def set_voltmeter(self):
         try:
+            # Optimized for speed
             self.voltmeter.write("*RST")
             self.voltmeter.write("*CLS")
-        except Exception as e:
-            raise RuntimeError(f"Failed to initialize voltmeter: {e}")
-
-    def set_voltmeter(self, command="CONF:VOLT:AC", plc=0.02, samples=50):
-        try:
-            self.voltmeter.write(command)
-            # Power line cycles are reduced to reduce measurement time
-            self.voltmeter.write(f"VOLT:AC:NPLC {plc}")
+            self.voltmeter.write("CONF:VOLT:AC 5")
+            self.voltmeter.write("SENS:VOLT:AC:BAND FAST")
             self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")
-            # self.voltmeter.write(f"SAMP:COUN {samples}")
+            self.voltmeter.write("SENS:VOLT:AC:RANG 5")
+            self.voltmeter.write("TRIG:SOUR IMM")
+            self.voltmeter.write("SAMP:COUN 1")
         except Exception as e:
             raise RuntimeError(f"Failed to configure voltmeter: {e}")
 
-    # WARNING: Models trained on data with these parameters for wavegen!
+    # WARNING: Models trained on data with default parameters for wavegen!
     # Don't touch unless absolutely needed
-    def set_wavegen(self, freq=1e3, v_pp=2.5, offset=2.5):
+    def set_wavegen(self, freq=5e3, v_pp=2.5, offset=2.5):
         try:
             command = f"APPL:SIN {freq},{v_pp},{offset}"
             self.wavegen.write(command)

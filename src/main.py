@@ -6,10 +6,11 @@ import classifiers as cf
 
 from simple_eit import SimpleEIT
 
-# List classifiers
+# List classifiers, kinda lazy but it works
 print(dir(cf))
 cf_in = input("Choose classifier by function name:")
 
+# No try/catch, just type the function correctly please :)
 app = SimpleEIT(getattr(cf, cf_in))
 
 # Shared data + synchronization
@@ -34,7 +35,7 @@ fig, ax = plt.subplots()
 
 im = ax.imshow(latest_data, cmap="binary", origin="lower", vmin=0, vmax=1)
 
-ax.set_title("Confidence in Location of Object of Higher Resistivity")
+ax.set_title("Probability of OHR Location")
 ax.set_xticks([0, 1])
 ax.set_yticks([0, 1])
 ax.set_xticklabels(["Left (D)", "Right (B)"])
@@ -54,25 +55,22 @@ def update(frame):
         text.remove()
     texts.clear()
 
+    # Assign new probabilites to texts
     for (i, j), value in np.ndenumerate(data):
         text = ax.text(j, i, f"{value:.2f}", ha="center", va="center")
         texts.append(text)
 
     return [im] + texts
 
-# Key press handler
+# Key press handler (ends thread)
 def on_key(event):
     print("Key pressed, exiting...")
 
     # Signal thread to stop
     stop_event.set()
-
-    # Wait briefly for thread to exit
     thread.join(timeout=1)
 
-    # Clean up app
     app.close()
-
     plt.close(fig)
 
 # Bind key press
