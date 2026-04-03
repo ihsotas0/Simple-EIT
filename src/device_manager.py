@@ -1,8 +1,5 @@
 import pyvisa
 
-KEYSIGHT_VID = "10893"
-AGILENT_VID = "2391"
-
 
 class DeviceManager:
     """Encapsulates PyVISA for robust instrument management."""
@@ -16,31 +13,26 @@ class DeviceManager:
 
         resources = self.rm.list_resources()
 
-        # Select devices given VID
-        keysight_resources = [r for r in resources if KEYSIGHT_VID in r]
-        agilent_resources = [r for r in resources if AGILENT_VID in r]
-
         fail = False
 
         # Probe devices and check for error
-        fail |= self._probe_instruments(keysight_resources, "Keysight")
-        fail |= self._probe_instruments(agilent_resources, "Agilent")
+        fail |= self._probe_instruments(resources)
 
-        if not keysight_resources or not agilent_resources or fail:
+        if not resources or fail:
             self.close()
             raise RuntimeError("Can't initialize devices!")
 
         # Select devices
-        self.voltmeter = self._find_by_idn(keysight_resources, "KEYSIGHT")
-        self.wavegen = self._find_by_idn(agilent_resources, "AGILENT")
+        self.voltmeter = self._find_by_idn(resources, "KEYSIGHT")
+        self.wavegen = self._find_by_idn(resources, "AGILENT")
 
         if self.voltmeter is None or self.wavegen is None:
             self.close()
             raise RuntimeError("Could not identify required instruments via IDN!")
 
         # Set timeouts (ms)
-        # self.voltmeter.timeout = 5000
-        # self.wavegen.timeout = 5000
+        self.voltmeter.timeout = 5000
+        self.wavegen.timeout = 5000
 
         print("Devices initialized successfully.")
 
@@ -54,70 +46,69 @@ class DeviceManager:
     # Close devices cleanly
     def close(self):
         print("Closing device connections...")
-        try:
-            if self.wavegen:
-                self.wavegen.close()
-        except Exception as e:
-            print(f"Error closing wavegen: {e}")
-
-        try:
-            if self.voltmeter:
-                self.voltmeter.close()
-        except Exception as e:
-            print(f"Error closing voltmeter: {e}")
-
-        try:
-            if self.rm:
-                self.rm.close()
-        except Exception as e:
-            print(f"Error closing ResourceManager: {e}")
+        self._close_resource(self.wavegen)
+        self._close_resource(self.voltmeter)
+        self._close_resource(self.rm)
 
     # Helper functions
-    def _probe_instruments(self, instruments, label):
-        print(f"Found {label} instruments:")
+    def _close_resource(self, resource):
+        try:
+            if resource:
+                resource.close()
+        except Exception as e:
+            print(f"Error closing resource: {e}")
+
+    def _probe_instruments(self, instruments):
+        print(f"Found instruments:")
         failed = False
 
         for resource in instruments:
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
-                print(f"{resource} -> {idn.strip()}")
+                print(f"Found {resource}: {idn.strip()}")
                 inst.close()
             except Exception as e:
-                print(f"{resource} -> Connection failed: {e}")
+                print(f"Connection failed {resource}: {e}")
                 failed = True
 
         return failed
 
     def _find_by_idn(self, resources, keyword):
+        print(f"Selecting {keyword} instruments:")
         for resource in resources:
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
                 if keyword.upper() in idn.upper():
-                    print(f"Selected {resource} ({idn.strip()})")
+                    print(f"Selected {resource}: {idn.strip()}")
                     return inst
                 inst.close()
             except Exception as e:
-                print(f"Error identifying {resource}: {e}")
+                print(f"Connection failed {resource}: {e}")
         return None
 
     # API
     def set_voltmeter(self):
         try:
-            # Optimized for speed
-            self.voltmeter.write("*RST")
-            self.voltmeter.write("*CLS")
-            self.voltmeter.write("CONF:VOLT:AC 5")
-            self.voltmeter.write("SENS:VOLT:AC:BAND FAST")
-            self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")
-            self.voltmeter.write("SENS:VOLT:AC:RANG 5")
-            self.voltmeter.write("TRIG:SOUR IMM")
-            self.voltmeter.write("SAMP:COUN 1")
+            # Optimized VISA code for faster measurements
+            commands = [
+                "*RST",
+                "*CLS",
+                "CONF:VOLT:AC 5",
+                "SENS:VOLT:AC:BAND FAST",
+                "VOLT:AC:ZERO:AUTO OFF",
+                "SENS:VOLT:AC:RANG 5",
+                "TRIG:SOUR IMM",
+                "SAMP:COUN 1",
+            ]
+            for command in commands:
+                self.voltmeter.write(command)
+
         except Exception as e:
             raise RuntimeError(f"Failed to configure voltmeter: {e}")
 
-    # WARNING: Models trained on data with default parameters for wavegen!
+    # WARNING: Models trained on data with these default parameters for wavegen!
     # Don't touch unless absolutely needed
     def set_wavegen(self, freq=5e3, v_pp=2.5, offset=2.5):
         try:
@@ -142,17 +133,20 @@ class DeviceManager:
 
 
 # Testing
+def basic_device_test():
+    with DeviceManager() as dm:
+        dm.set_voltmeter()
+        dm.set_wavegen()
+
+        for i in range(10):
+            voltage = dm.get_voltage()
+            print(f"{i}: {voltage:.6f}")
+
+
 if __name__ == "__main__":
     try:
-        with DeviceManager() as dm:
-            dm.initialize_voltmeter()
-            dm.set_voltmeter()
-            dm.set_wavegen()
-
-            for i in range(10):
-                voltage = dm.get_voltage()
-                print(f"{i}: {voltage:.6f}")
-
+        print("Running basic device test...")
+        basic_device_test()
     except RuntimeError as e:
         print(f"Expected error: {e}")
     except Exception as e:

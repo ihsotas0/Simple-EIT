@@ -1,3 +1,6 @@
+import csv
+import os
+
 import numpy as np
 from gpiozero import LED
 
@@ -105,10 +108,3 @@ class SimpleEIT:
             case 4:
                 mux[0].on()
                 mux[1].on()
-
-
-# Testing
-if __name__ == "__main__":
-    app = SimpleEIT()
-    for i in range(10):
-        print(f"{i}: {app.run()}")
