@@ -8,7 +8,9 @@
 3. For vertical eraser, collect 6 voltages 400 times at 5 kHz frequency. Record
    100 measurements for each quadrant. Move the eraser to random positions
    within the quadrant, with random rotations, while keeping it vertical, for
-   each of the 100 measurements.
+   each of the 100 measurements. Place a small string from A to D and B to C to
+   make sure the eraser stays with in the quadrant, and to make sure data is
+   collected even at the boundaries of the quardrant effectively.
 
 4. Repeat step 3 for a finger and a small balloon (2 cm radius).
 
