@@ -124,7 +124,7 @@ class DeviceManager:
         except Exception as e:
             raise RuntimeError(f"Failed to configure wave generator: {e}")
 
-    def get_voltage(self, chunk_size=5):
+    def get_voltage(self, chunk_size=5000):
         """
         Generator yielding RMS of successive chunks.
         chunk_size = number of samples per RMS calculation
@@ -153,11 +153,12 @@ class DeviceManager:
 # Testing
 def basic_device_test():
     with DeviceManager() as dm:
-        dm.set_voltmeter()
+        dm.set_voltmeter(total_samples=50000)  # smaller buffer for faster startup)
         dm.set_wavegen()
 
+        rms_gen = dm.get_voltage(chunk_size=5000)
         for i in range(25):
-            voltage = dm.get_voltage()
+            voltage = next(rms_gen)
             print(f"{i}: {voltage:.6f}")
 
 
