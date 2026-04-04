@@ -95,7 +95,7 @@ class DeviceManager:
         try:
             self.scope.write("*RST")
             self.scope.write(":CHAN1:DISP ON")
-            self.scope.write(":CHAN1:SCAL 0.5")         # 0.5 V/div
+            self.scope.write(":CHAN1:SCAL 2")         # 2 V/div
             self.scope.write(":TIM:SCAL 2E-4")         # 0.2 ms/div
             self.scope.write(":TRIG:EDGE:SOUR CHAN1")
             self.scope.write(":TRIG:EDGE:LEV 0")
