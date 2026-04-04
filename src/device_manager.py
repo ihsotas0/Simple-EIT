@@ -1,114 +1,130 @@
 import time
+
 import numpy as np
 import pyvisa
 
 
 class DeviceManager:
-    """34470A digitize streaming for continuous RMS acquisition."""
+    """Encapsulates PyVISA for robust instrument management."""
 
     def __init__(self):
         print("Initializing devices...")
+
         self.rm = pyvisa.ResourceManager()
-        self.voltmeter = None
         self.wavegen = None
+        self.voltmeter = None
 
         resources = self.rm.list_resources()
-        if not resources:
+
+        fail = False
+
+        # Probe devices and check for error
+        fail |= self._probe_instruments(resources)
+
+        if not resources or fail:
             self.close()
-            raise RuntimeError("No VISA resources found!")
+            raise RuntimeError("Can't initialize devices!")
 
-        self._probe_instruments(resources)
-
-        # Identify instruments by IDN
+        # Select devices
         self.voltmeter = self._find_by_idn(resources, "KEYSIGHT")
         self.wavegen = self._find_by_idn(resources, "AGILENT")
 
         if self.voltmeter is None or self.wavegen is None:
             self.close()
-            raise RuntimeError("Could not find required instruments!")
+            raise RuntimeError("Could not identify required instruments via IDN!")
 
-        # Increase timeout for large transfers
-        self.voltmeter.timeout = 20000
+        # Set timeouts (ms)
+        self.voltmeter.timeout = 5000
         self.wavegen.timeout = 5000
 
         print("Devices initialized successfully.")
 
-    # Context manager
+    # Context Manager
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc, tb):
         self.close()
 
+    # Close devices cleanly
     def close(self):
-        print("Closing devices...")
-        for r in [self.voltmeter, self.wavegen, self.rm]:
-            try:
-                if r:
-                    r.close()
-            except Exception as e:
-                print(f"Error closing resource: {e}")
+        print("Closing device connections...")
+        self._close_resource(self.wavegen)
+        self._close_resource(self.voltmeter)
+        self._close_resource(self.rm)
         print("Done!")
 
-    # -------------------------
-    # Helpers
-    # -------------------------
-    def _probe_instruments(self, resources):
-        print("Found instruments:")
-        for res in resources:
+    # Helper functions
+    def _close_resource(self, resource):
+        try:
+            if resource:
+                resource.close()
+        except Exception as e:
+            print(f"Error closing resource: {e}")
+
+    def _probe_instruments(self, instruments):
+        print(f"Found instruments:")
+        failed = False
+
+        for resource in instruments:
             try:
-                inst = self.rm.open_resource(res)
+                inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
-                print(f"  {res}: {idn.strip()}")
+                print(f"Found {resource}: {idn.strip()}")
                 inst.close()
             except Exception as e:
-                print(f"  {res} connection failed: {e}")
+                print(f"Connection failed {resource}: {e}")
+                failed = True
+
+        return failed
 
     def _find_by_idn(self, resources, keyword):
-        for res in resources:
+        print(f"Selecting {keyword} instruments:")
+        for resource in resources:
             try:
-                inst = self.rm.open_resource(res)
+                inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
                 if keyword.upper() in idn.upper():
-                    print(f"Selected {res}: {idn.strip()}")
+                    print(f"Selected {resource}: {idn.strip()}")
                     return inst
                 inst.close()
             except Exception as e:
-                print(f"{res} connection failed: {e}")
+                print(f"Connection failed {resource}: {e}")
         return None
 
-    # -------------------------
-    # Configure voltmeter once
-    # -------------------------
-    def configure_voltmeter(self, total_samples=100_000, voltage_range=10, aperture=20e-6):
-        """Set up digitize mode for continuous streaming."""
-        vm = self.voltmeter
-        vm.write("*RST")
-        vm.write("*CLS")
+    # API
+    def set_voltmeter(self, total_samples=100_000, voltage_range=10, aperture=20e-6):
+        try:
+            """Set up digitize mode for continuous streaming."""
+            vm = self.voltmeter
+            vm.write("*RST")
+            vm.write("*CLS")
 
-        vm.write("CONF:DIG:VOLT")  
-        vm.write(f"DIG:VOLT:RANG {voltage_range}")
-        vm.write(f"DIG:VOLT:APER {aperture}")
-        vm.write(f"SAMP:COUN {total_samples}")  # large sample buffer
-        vm.write("TRIG:SOUR IMM")
-        vm.write("FORM:DATA REAL,32")
+            vm.write("CONF:DIG:VOLT")  
+            vm.write(f"DIG:VOLT:RANG {voltage_range}")
+            vm.write(f"DIG:VOLT:APER {aperture}")
+            vm.write(f"SAMP:COUN {total_samples}")  # large sample buffer
+            vm.write("TRIG:SOUR IMM")
+            vm.write("FORM:DATA REAL,32")
 
-        # Start acquisition once
-        vm.write("INIT")
-        vm.query("*OPC?")  # wait for buffer ready
-        print(f"Voltmeter configured for streaming, {total_samples} samples.")
+            # Start acquisition once
+            vm.write("INIT")
+            vm.query("*OPC?")  # wait for buffer ready
+            print(f"Voltmeter configured for streaming, {total_samples} samples.")
 
-    # -------------------------
-    # Configure wave generator
-    # -------------------------
-    def configure_wavegen(self, freq=5e3, v_pp=2.5, offset=2.5):
-        self.wavegen.write(f"APPL:SIN {freq},{v_pp},{offset}")
-        print(f"Wavegen: {freq} Hz, {v_pp} Vpp, {offset} V offset")
+        except Exception as e:
+            raise RuntimeError(f"Failed to configure voltmeter: {e}")
 
-    # -------------------------
-    # Continuous RMS acquisition
-    # -------------------------
-    def stream_rms(self, chunk_size=5000):
+    # WARNING: Models trained on data with these default parameters for wavegen!
+    # Don't touch unless absolutely needed
+    def set_wavegen(self, freq=5e3, v_pp=2.5, offset=2.5):
+        try:
+            command = f"APPL:SIN {freq},{v_pp},{offset}"
+            self.wavegen.write(command)
+        except Exception as e:
+            raise RuntimeError(f"Failed to configure wave generator: {e}")
+
+    def get_voltage(self, chunk_size=5000):
         """
         Generator yielding RMS of successive chunks.
         chunk_size = number of samples per RMS calculation
@@ -133,8 +149,7 @@ class DeviceManager:
             except Exception as e:
                 print(f"Streaming error: {e}")
                 break
-
-
+            
 # Testing
 def basic_device_test():
     with DeviceManager() as dm:
@@ -154,3 +169,10 @@ if __name__ == "__main__":
         print(f"Expected error: {e}")
     except Exception as e:
         print(f"Unexpected error: {e}")
+
+
+
+
+
+
+
