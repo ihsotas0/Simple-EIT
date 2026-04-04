@@ -3,7 +3,7 @@ import numpy as np
 import pyvisa
 
 
-class ContinuousDeviceManager:
+class DeviceManager:
     """34470A digitize streaming for continuous RMS acquisition."""
 
     def __init__(self):
@@ -133,3 +133,24 @@ class ContinuousDeviceManager:
             except Exception as e:
                 print(f"Streaming error: {e}")
                 break
+
+
+# Testing
+def basic_device_test():
+    with DeviceManager() as dm:
+        dm.set_voltmeter()
+        dm.set_wavegen()
+
+        for i in range(25):
+            voltage = dm.get_voltage()
+            print(f"{i}: {voltage:.6f}")
+
+
+if __name__ == "__main__":
+    try:
+        print("Running basic device test...")
+        basic_device_test()
+    except RuntimeError as e:
+        print(f"Expected error: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
