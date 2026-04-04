@@ -99,6 +99,7 @@ class DeviceManager:
             self.scope.write(":TIM:SCAL 2E-4")         # 0.2 ms/div
             self.scope.write(":TRIG:EDGE:SOUR CHAN1")
             self.scope.write(":TRIG:EDGE:LEV 0")
+            self.scope.write(":CHAN1:COUP AC")
 
         except Exception as e:
             raise RuntimeError(f"Failed to configure scope: {e}")

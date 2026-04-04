@@ -66,7 +66,7 @@ class SimpleEIT:
 
         return v_return
 
-    def run(self):
+    def run(self, testing=False):
 
         # Get the measured voltages
         # (V_AB, V_AD, V_BC, V_CD, V_AC, V_BD)
@@ -75,10 +75,14 @@ class SimpleEIT:
         # Use classifier
         v_raw = self.model(v)
 
-        # Matrix OHR locations:
-        # [AD AB]
-        # [CD BC]
-        return v_raw.reshape(2, 2)
+        if testing is True:
+            return v_raw
+        else:
+            # Matrix OHR locations:
+            # [AD AB]
+            # [CD BC]
+            return v_raw.reshape(2, 2)
+
 
     # Context Manager
     def __enter__(self):

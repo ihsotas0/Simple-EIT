@@ -56,3 +56,28 @@ def linear_classifier(v):
     B2 = None
 
     pass
+
+def mse_lut(v):
+    # input: [V_AB, V_AD, V_BC, V_CD, V_AC, V_BD]
+    # output: [AD AB CD BC] (sum=1)
+
+    AD = np.array([0.29, 1.8525, 3.34875, 2.11125, 1.62875, 3.34375]    )
+    AB = np.array([0.41, 1.9075, 2.885, 2.3775, 1.46375, 2.76625])
+    CD = np.array([0.4, 1.91333333333333, 3.1125, 2.07, 1.50583333333333, 3.035])
+    BC = np.array([0.337, 2.365, 3.253, 2.069, 2.18, 3.195])
+
+    refs = [AD, AB, CD, BC]
+
+    # Compute MSE for each reference
+    mses = [np.mean((v - ref) ** 2) for ref in refs]
+
+    # Find index of minimum MSE
+    min_idx = np.argmin(mses)
+
+    # Create one-hot output
+    out = np.zeros(4)
+    out[min_idx] = 1
+
+    return out
+
+

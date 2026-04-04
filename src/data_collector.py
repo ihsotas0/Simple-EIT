@@ -25,7 +25,7 @@ def no_object_data():
 
         # Run app 100 times and append the result to the CSV file
         for _ in range(100):
-            v = app.run().flatten()
+            v = app.run(testing=True).flatten()
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             writer.writerow([timestamp] + list(v))
 
@@ -49,7 +49,7 @@ def quadrant_object_data(object_name):
 
         # Run app 100 times and append the result to the CSV file
         for _ in range(100):
-            v = app.run().flatten()
+            v = app.run(testing=True).flatten()
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             # Prompt user for a label, defaulting to the previous label
