@@ -97,19 +97,17 @@ class DeviceManager:
         try:
             self.scope.write("*RST")
             self.scope.write(":CHAN1:DISP ON")
-            self.scope.write(":CHAN1:SCAL 1.0")         # 1 V/div
-            self.scope.write(":TIM:SCAL 1E-3")         # 1 ms/div
+            self.scope.write(":CHAN1:SCAL 0.5")         # 0.5 V/div
+            self.scope.write(":TIM:SCAL 5E-4")         # 0.5 ms/div
             self.scope.write(":TRIG:EDGE:SOUR CHAN1")
-            self.scope.write(":TRIG:EDGE:LEV 0.5")
-
-            self.scope.write("INIT")  # start once
+            self.scope.write(":TRIG:EDGE:LEV 0")
 
         except Exception as e:
-            raise RuntimeError(f"Failed to configure voltmeter: {e}")
+            raise RuntimeError(f"Failed to configure scope: {e}")
 
     # WARNING: Models trained on data with these default parameters for wavegen!
     # Don't touch unless absolutely needed
-    def set_wavegen(self, freq=5e3, v_pp=2.5, offset=2.5):
+    def set_wavegen(self, freq=5e3, v_pp=5, offset=0):
         try:
             command = f"APPL:SIN {freq},{v_pp},{offset}"
             self.wavegen.write(command)
@@ -118,17 +116,15 @@ class DeviceManager:
 
     def get_voltage(self):
         try:
-            time.sleep(0.05)  # wait ~50 ms for new samples
-
-            # Read ONLY newest N samples
-            N = 20  # ~50 ms worth at ~360 Hz
-
-            self.scope.write(f"TRAC:DATA? -{N}")
-            raw_data = self.scope.read()
-
-            samples = np.array([float(x) for x in raw_data.strip().split(",")])
-
-            rms_value = np.sqrt(np.mean(samples**2))
+            
+            # Trigger a fresh acquisition (fast single capture)
+            self.scope.write(":DIG")
+            
+            # Wait until acquisition completes
+            self.scope.query("*OPC?")
+            
+            # Query RMS voltage directly from scope
+            rms_value = float(self.scope.query(":MEAS:VRMS? CHAN1"))            
             return rms_value
 
         except Exception as e:
