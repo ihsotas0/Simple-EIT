@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 import pyvisa
 
@@ -98,7 +96,7 @@ class DeviceManager:
             self.scope.write("*RST")
             self.scope.write(":CHAN1:DISP ON")
             self.scope.write(":CHAN1:SCAL 0.5")         # 0.5 V/div
-            self.scope.write(":TIM:SCAL 5E-4")         # 0.5 ms/div
+            self.scope.write(":TIM:SCAL 2E-4")         # 0.2 ms/div
             self.scope.write(":TRIG:EDGE:SOUR CHAN1")
             self.scope.write(":TRIG:EDGE:LEV 0")
 
@@ -107,7 +105,7 @@ class DeviceManager:
 
     # WARNING: Models trained on data with these default parameters for wavegen!
     # Don't touch unless absolutely needed
-    def set_wavegen(self, freq=5e3, v_pp=5, offset=0):
+    def set_wavegen(self, freq=5e3, v_pp=2.5, offset=2.5):
         try:
             command = f"APPL:SIN {freq},{v_pp},{offset}"
             self.wavegen.write(command)
