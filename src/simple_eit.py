@@ -63,7 +63,7 @@ class SimpleEIT:
             # (V_AB, V_AD, V_BC, V_CD, V_AC, V_BD)
             v_return[index - 1] = self.dm.get_voltage()
 
-        print(f"Measured voltages: {v_return:.3f}")
+        print(f"Measured voltages: {v_return}")
 
         return v_return
 
