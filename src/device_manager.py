@@ -134,7 +134,7 @@ class DeviceManager:
 
             # Fetch the buffer data
             self.voltmeter.write("TRAC:DATA?")
-            raw_data = voltmeter.read()
+            raw_data = self.voltmeter.read()
 
             # Convert to list of floats
             samples = [float(x) for x in raw_data.strip().split(",")]
