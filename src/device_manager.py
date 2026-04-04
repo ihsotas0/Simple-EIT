@@ -1,3 +1,6 @@
+import time
+
+import numpy as np
 import pyvisa
 
 
@@ -92,16 +95,23 @@ class DeviceManager:
     # API
     def set_voltmeter(self):
         try:
-            # Optimized VISA code for faster measurements
-            self.voltmeter.write("*RST;*CLS")
-            self.voltmeter.write("CONF:VOLT:AC 5, DEF")      # Fast AC volts
-            self.voltmeter.write("SENS:VOLT:AC:BAND FAST")   # Fast filter
+            # Reset and clear
+            self.voltmeter.write("*RST")
+            self.voltmeter.write("*CLS")
+
+            # Configure AC volts in fast mode
+            self.voltmeter.write("CONF:VOLT:AC 5,DEF")
+            self.voltmeter.write("SENS:VOLT:AC:BAND FAST")
             self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")
             self.voltmeter.write("SENS:VOLT:AC:RANG 5")
-            self.voltmeter.write("TRIG:SOUR IMM")            # Immediate trigger
-            self.voltmeter.write("SAMP:COUN 1")              # n samples per trigger
-            self.voltmeter.write("TRAC:FEED SENSE")          # Send to internal buffer
-            self.voltmeter.write("TRAC:DEL:ENAB ON")         # Enable buffer
+
+            # Configure trace buffer for digitizer acquisition
+            self.voltmeter.write("TRAC:POIN 100")  # Buffer n points
+            self.voltmeter.write("TRAC:FEED SENSE")  # Feed measurements to trace
+            self.voltmeter.write("TRAC:DEL:ENAB ON")  # Enable buffer overwrite
+
+            # Start continuous triggering
+            self.voltmeter.write("TRIG:SOUR IMM")
 
         except Exception as e:
             raise RuntimeError(f"Failed to configure voltmeter: {e}")
@@ -117,14 +127,26 @@ class DeviceManager:
 
     def get_voltage(self):
         try:
-            self.voltmeter.write("FETCH?")
-            response = self.voltmeter.read()
+            # Start acquisition
+            self.voltmeter.write("INIT")
 
-            # Get values from VISA response (for n samples)
-            values = [float(x) for x in response.split(",")]
+            time.sleep(0.05)  # 50 ms
 
-            # Return average of samples
-            return sum(values) / len(values)
+            # Fetch the buffer data
+            self.voltmeter.write("TRAC:DATA?")
+            raw_data = voltmeter.read()
+
+            # Convert to list of floats
+            samples = [float(x) for x in raw_data.strip().split(",")]
+
+            # Compute approximate RMS of last 50 ms segment
+            rms_value = np.sqrt(np.mean(np.square(samples)))
+            print(f"Approx RMS: {rms_value} V")
+
+            # Stop acquisition
+            voltmeter.write("ABOR")
+
+            return rms_value
 
         except Exception as e:
             raise RuntimeError(f"Voltage read failed: {e}")
