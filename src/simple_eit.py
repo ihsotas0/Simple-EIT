@@ -93,7 +93,7 @@ class SimpleEIT:
 
     # Helper functions
 
-    def _set_mux_state(mux, state):
+    def _set_mux_state(self, mux, state):
         # mux = (A0, A1)
         match state:
             case 1:
