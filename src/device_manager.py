@@ -34,7 +34,7 @@ class DeviceManager:
             raise RuntimeError("Could not identify required instruments via IDN!")
 
         # Set timeouts (ms)
-        self.voltmeter.timeout = 5000
+        self.voltmeter.timeout = 10000
         self.wavegen.timeout = 5000
 
         print("Devices initialized successfully.")
@@ -124,7 +124,7 @@ class DeviceManager:
         except Exception as e:
             raise RuntimeError(f"Failed to configure wave generator: {e}")
 
-    def get_voltage(self, chunk_size=5000):
+    def get_voltage(self, chunk_size=5):
         """
         Generator yielding RMS of successive chunks.
         chunk_size = number of samples per RMS calculation
@@ -149,7 +149,7 @@ class DeviceManager:
             except Exception as e:
                 print(f"Streaming error: {e}")
                 break
-            
+
 # Testing
 def basic_device_test():
     with DeviceManager() as dm:
