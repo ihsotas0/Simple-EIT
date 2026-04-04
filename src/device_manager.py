@@ -49,6 +49,7 @@ class DeviceManager:
         self._close_resource(self.wavegen)
         self._close_resource(self.voltmeter)
         self._close_resource(self.rm)
+        print("Done!")
 
     # Helper functions
     def _close_resource(self, resource):
@@ -92,18 +93,15 @@ class DeviceManager:
     def set_voltmeter(self):
         try:
             # Optimized VISA code for faster measurements
-            commands = [
-                "*RST",
-                "*CLS",
-                "CONF:VOLT:AC 5",
-                "SENS:VOLT:AC:BAND FAST",
-                "VOLT:AC:ZERO:AUTO OFF",
-                "SENS:VOLT:AC:RANG 5",
-                "TRIG:SOUR IMM",
-                "SAMP:COUN 1",
-            ]
-            for command in commands:
-                self.voltmeter.write(command)
+            self.voltmeter.write("*RST;*CLS")
+            self.voltmeter.write("CONF:VOLT:AC 5, DEF")      # Fast AC volts
+            self.voltmeter.write("SENS:VOLT:AC:BAND FAST")   # Fast filter
+            self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")
+            self.voltmeter.write("SENS:VOLT:AC:RANG 5")
+            self.voltmeter.write("TRIG:SOUR IMM")            # Immediate trigger
+            self.voltmeter.write("SAMP:COUN 1")              # n samples per trigger
+            self.voltmeter.write("TRAC:FEED SENSE")          # Send to internal buffer
+            self.voltmeter.write("TRAC:DEL:ENAB ON")         # Enable buffer
 
         except Exception as e:
             raise RuntimeError(f"Failed to configure voltmeter: {e}")
@@ -119,7 +117,7 @@ class DeviceManager:
 
     def get_voltage(self):
         try:
-            self.voltmeter.write("READ?")
+            self.voltmeter.write("FETCH?")
             response = self.voltmeter.read()
 
             # Get values from VISA response (for n samples)
@@ -138,7 +136,7 @@ def basic_device_test():
         dm.set_voltmeter()
         dm.set_wavegen()
 
-        for i in range(10):
+        for i in range(25):
             voltage = dm.get_voltage()
             print(f"{i}: {voltage:.6f}")
 
