@@ -53,7 +53,6 @@ class SimpleEIT:
             # Switch MUX state
             self._set_mux_state(self.mux1, s1)  # Apply state to mux1
             self._set_mux_state(self.mux2, s2)  # Apply state to mux2
-            print(f"Switched MUX 1: S{s1}, MUX 2: S{s2}, Config: {index}")
 
             # End MUX switch (turn measurement leads on)
             self.mux_toggle[0].on()
