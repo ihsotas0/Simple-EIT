@@ -1,177 +1,135 @@
 import time
-
 import numpy as np
 import pyvisa
 
 
-class DeviceManager:
-    """Encapsulates PyVISA for robust instrument management."""
+class ContinuousDeviceManager:
+    """34470A digitize streaming for continuous RMS acquisition."""
 
     def __init__(self):
         print("Initializing devices...")
-
         self.rm = pyvisa.ResourceManager()
-        self.wavegen = None
         self.voltmeter = None
+        self.wavegen = None
 
         resources = self.rm.list_resources()
-
-        fail = False
-
-        # Probe devices and check for error
-        fail |= self._probe_instruments(resources)
-
-        if not resources or fail:
+        if not resources:
             self.close()
-            raise RuntimeError("Can't initialize devices!")
+            raise RuntimeError("No VISA resources found!")
 
-        # Select devices
+        self._probe_instruments(resources)
+
+        # Identify instruments by IDN
         self.voltmeter = self._find_by_idn(resources, "KEYSIGHT")
         self.wavegen = self._find_by_idn(resources, "AGILENT")
 
         if self.voltmeter is None or self.wavegen is None:
             self.close()
-            raise RuntimeError("Could not identify required instruments via IDN!")
+            raise RuntimeError("Could not find required instruments!")
 
-        # Set timeouts (ms)
-        self.voltmeter.timeout = 5000
+        # Increase timeout for large transfers
+        self.voltmeter.timeout = 20000
         self.wavegen.timeout = 5000
 
         print("Devices initialized successfully.")
 
-    # Context Manager
+    # Context manager
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc, tb):
         self.close()
 
-    # Close devices cleanly
     def close(self):
-        print("Closing device connections...")
-        self._close_resource(self.wavegen)
-        self._close_resource(self.voltmeter)
-        self._close_resource(self.rm)
+        print("Closing devices...")
+        for r in [self.voltmeter, self.wavegen, self.rm]:
+            try:
+                if r:
+                    r.close()
+            except Exception as e:
+                print(f"Error closing resource: {e}")
         print("Done!")
 
-    # Helper functions
-    def _close_resource(self, resource):
-        try:
-            if resource:
-                resource.close()
-        except Exception as e:
-            print(f"Error closing resource: {e}")
-
-    def _probe_instruments(self, instruments):
-        print(f"Found instruments:")
-        failed = False
-
-        for resource in instruments:
+    # -------------------------
+    # Helpers
+    # -------------------------
+    def _probe_instruments(self, resources):
+        print("Found instruments:")
+        for res in resources:
             try:
-                inst = self.rm.open_resource(resource)
+                inst = self.rm.open_resource(res)
                 idn = inst.query("*IDN?")
-                print(f"Found {resource}: {idn.strip()}")
+                print(f"  {res}: {idn.strip()}")
                 inst.close()
             except Exception as e:
-                print(f"Connection failed {resource}: {e}")
-                failed = True
-
-        return failed
+                print(f"  {res} connection failed: {e}")
 
     def _find_by_idn(self, resources, keyword):
-        print(f"Selecting {keyword} instruments:")
-        for resource in resources:
+        for res in resources:
             try:
-                inst = self.rm.open_resource(resource)
+                inst = self.rm.open_resource(res)
                 idn = inst.query("*IDN?")
                 if keyword.upper() in idn.upper():
-                    print(f"Selected {resource}: {idn.strip()}")
+                    print(f"Selected {res}: {idn.strip()}")
                     return inst
                 inst.close()
             except Exception as e:
-                print(f"Connection failed {resource}: {e}")
+                print(f"{res} connection failed: {e}")
         return None
 
-    # API
-    def set_voltmeter(self):
-        try:
-            self.voltmeter.write("*RST")
-            self.voltmeter.write("*CLS")
+    # -------------------------
+    # Configure voltmeter once
+    # -------------------------
+    def configure_voltmeter(self, total_samples=100_000, voltage_range=10, aperture=20e-6):
+        """Set up digitize mode for continuous streaming."""
+        vm = self.voltmeter
+        vm.write("*RST")
+        vm.write("*CLS")
 
-            # -----------------------------
-            # Configure fastest digitizing
-            # -----------------------------
+        vm.write("CONF:DIG:VOLT")  
+        vm.write(f"DIG:VOLT:RANG {voltage_range}")
+        vm.write(f"DIG:VOLT:APER {aperture}")
+        vm.write(f"SAMP:COUN {total_samples}")  # large sample buffer
+        vm.write("TRIG:SOUR IMM")
+        vm.write("FORM:DATA REAL,32")
 
-            # Digitize voltage mode
-            self.voltmeter.write("CONF:DIG:VOLT")
+        # Start acquisition once
+        vm.write("INIT")
+        vm.query("*OPC?")  # wait for buffer ready
+        print(f"Voltmeter configured for streaming, {total_samples} samples.")
 
-            # Set range (IMPORTANT: avoid autorange for speed)
-            self.voltmeter.write("DIG:VOLT:RANG 10")
+    # -------------------------
+    # Configure wave generator
+    # -------------------------
+    def configure_wavegen(self, freq=5e3, v_pp=2.5, offset=2.5):
+        self.wavegen.write(f"APPL:SIN {freq},{v_pp},{offset}")
+        print(f"Wavegen: {freq} Hz, {v_pp} Vpp, {offset} V offset")
 
-            # Set fastest aperture (20 microseconds → 50 kSa/s)
-            self.voltmeter.write("DIG:VOLT:APER 20E-6")
+    # -------------------------
+    # Continuous RMS acquisition
+    # -------------------------
+    def stream_rms(self, chunk_size=5000):
+        """
+        Generator yielding RMS of successive chunks.
+        chunk_size = number of samples per RMS calculation
+        """
+        vm = self.voltmeter
+        while True:
+            try:
+                # Fetch next chunk from the ongoing buffer
+                data = vm.query_binary_values("FETC?", datatype='f', container=np.array)
+                if len(data) == 0:
+                    # No more data; optionally re-trigger
+                    vm.write("INIT")
+                    vm.query("*OPC?")
+                    continue
 
-            # Number of samples
-            num_samples = 5
-            self.voltmeter.write(f"SAMP:COUN {num_samples}")
+                # Split into chunks if larger than requested
+                for start in range(0, len(data), chunk_size):
+                    chunk = data[start:start+chunk_size]
+                    rms = np.sqrt(np.mean(chunk**2))
+                    yield rms
 
-            # Trigger immediately
-            self.voltmeter.write("TRIG:SOUR IMM")
-
-            # Binary format (faster transfer)
-            self.voltmeter.write("FORM:DATA REAL,32")
-            self.voltmeter.write("INIT")
-
-        except Exception as e:
-            raise RuntimeError(f"Failed to configure voltmeter: {e}")
-
-    # WARNING: Models trained on data with these default parameters for wavegen!
-    # Don't touch unless absolutely needed
-    def set_wavegen(self, freq=5e3, v_pp=2.5, offset=2.5):
-        try:
-            command = f"APPL:SIN {freq},{v_pp},{offset}"
-            self.wavegen.write(command)
-        except Exception as e:
-            raise RuntimeError(f"Failed to configure wave generator: {e}")
-
-    def get_voltage(self):
-        try:
-
-            self.voltmeter.write("ABOR")
-            self.voltmeter.write("INIT")
-
-            # Wait until acquisition finishes
-            self.voltmeter.query("*OPC?")
-
-            data = self.voltmeter.query_binary_values(
-                "FETC?",
-                datatype='f',
-                container=np.array
-            )
-
-            rms = np.sqrt(np.mean(data**2))
-            return rms
-
-        except Exception as e:
-            raise RuntimeError(f"Voltage read failed: {e}")
-
-
-# Testing
-def basic_device_test():
-    with DeviceManager() as dm:
-        dm.set_voltmeter()
-        dm.set_wavegen()
-
-        for i in range(25):
-            voltage = dm.get_voltage()
-            print(f"{i}: {voltage:.6f}")
-
-
-if __name__ == "__main__":
-    try:
-        print("Running basic device test...")
-        basic_device_test()
-    except RuntimeError as e:
-        print(f"Expected error: {e}")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
+            except Exception as e:
+                print(f"Streaming error: {e}")
+                break
