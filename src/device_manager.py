@@ -98,18 +98,29 @@ class DeviceManager:
             self.voltmeter.write("*RST")
             self.voltmeter.write("*CLS")
 
-            self.voltmeter.write("CONF:VOLT:DC 10")
-            self.voltmeter.write("SENS:VOLT:DC:NPLC 0.01")
-            self.voltmeter.write("SENS:VOLT:DC:RANG 10")
+            # -----------------------------
+            # Configure fastest digitizing
+            # -----------------------------
 
+            # Digitize voltage mode
+            self.voltmeter.write("CONF:DIG:VOLT")
+
+            # Set range (IMPORTANT: avoid autorange for speed)
+            self.voltmeter.write("DIG:VOLT:RANG 10")
+
+            # Set fastest aperture (20 microseconds → 50 kSa/s)
+            self.voltmeter.write("DIG:VOLT:APER 20E-6")
+
+            # Number of samples
+            num_samples = 5000
+            self.voltmeter.write(f"SAMP:COUN {num_samples}")
+
+            # Trigger immediately
             self.voltmeter.write("TRIG:SOUR IMM")
-            self.voltmeter.write("SAMP:COUN INF")   # continuous sampling
 
-            self.voltmeter.write("TRAC:POIN 10000") # buffer size
-            self.voltmeter.write("TRAC:FEED SENSE")
-            self.voltmeter.write("TRAC:DEL:ENAB ON")
-
-            self.voltmeter.write("INIT")  # start once
+            # Binary format (faster transfer)
+            self.voltmeter.write("FORM:DATA REAL,32")
+            self.voltmeter.write("INIT")
 
         except Exception as e:
             raise RuntimeError(f"Failed to configure voltmeter: {e}")
@@ -125,18 +136,15 @@ class DeviceManager:
 
     def get_voltage(self):
         try:
-            time.sleep(0.05)  # wait ~50 ms for new samples
+           
+            # Initiate acquisition
+            # Fetch binary data
+            data = self.voltmeter.query_binary_values("FETC?", datatype='f', container=np.array)
+            rms = np.sqrt(np.mean(data**2))
+            return rms
+            print(f"RMS Voltage: {rms:.6f} V")
+            print(f"Samples collected: {len(data)}")
 
-            # Read ONLY newest N samples
-            N = 20  # ~50 ms worth at ~360 Hz
-
-            self.voltmeter.write(f"TRAC:DATA? -{N}")
-            raw_data = self.voltmeter.read()
-
-            samples = np.array([float(x) for x in raw_data.strip().split(",")])
-
-            rms_value = np.sqrt(np.mean(samples**2))
-            return rms_value
 
         except Exception as e:
             raise RuntimeError(f"Voltage read failed: {e}")
