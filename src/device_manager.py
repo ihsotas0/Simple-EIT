@@ -1,8 +1,8 @@
-import pyvisa
 import time
 
-KEYSIGHT_VID = "10893"
-AGILENT_VID = "2391"
+import numpy as np
+import pyvisa
+
 
 class DeviceManager:
     """Encapsulates PyVISA for robust instrument management."""
@@ -16,31 +16,26 @@ class DeviceManager:
 
         resources = self.rm.list_resources()
 
-        # Select devices given VID
-        keysight_resources = [r for r in resources if KEYSIGHT_VID in r]
-        agilent_resources = [r for r in resources if AGILENT_VID in r]
-
         fail = False
 
-        # Probe devices and see if there's an error
-        fail |= self._probe_instruments(keysight_resources, "Keysight")
-        fail |= self._probe_instruments(agilent_resources, "Agilent")
+        # Probe devices and check for error
+        fail |= self._probe_instruments(resources)
 
-        if not keysight_resources or not agilent_resources or fail:
+        if not resources or fail:
             self.close()
             raise RuntimeError("Can't initialize devices!")
 
         # Select devices
-        self.voltmeter = self._find_by_idn(keysight_resources, "KEYSIGHT")
-        self.wavegen = self._find_by_idn(agilent_resources, "AGILENT")
+        self.voltmeter = self._find_by_idn(resources, "KEYSIGHT")
+        self.wavegen = self._find_by_idn(resources, "AGILENT")
 
         if self.voltmeter is None or self.wavegen is None:
             self.close()
-            raise RuntimeError("Could not identify required instruments via IDN.")
+            raise RuntimeError("Could not identify required instruments via IDN!")
 
         # Set timeouts (ms)
-        #self.voltmeter.timeout = 5000
-        #self.wavegen.timeout = 5000
+        self.voltmeter.timeout = 5000
+        self.wavegen.timeout = 5000
 
         print("Devices initialized successfully.")
 
@@ -54,108 +49,114 @@ class DeviceManager:
     # Close devices cleanly
     def close(self):
         print("Closing device connections...")
-        try:
-            if self.wavegen:
-                self.wavegen.close()
-        except Exception as e:
-            print(f"Error closing wavegen: {e}")
+        self._close_resource(self.wavegen)
+        self._close_resource(self.voltmeter)
+        self._close_resource(self.rm)
+        print("Done!")
 
+    # Helper functions
+    def _close_resource(self, resource):
         try:
-            if self.voltmeter:
-                self.voltmeter.close()
+            if resource:
+                resource.close()
         except Exception as e:
-            print(f"Error closing voltmeter: {e}")
+            print(f"Error closing resource: {e}")
 
-        try:
-            if self.rm:
-                self.rm.close()
-        except Exception as e:
-            print(f"Error closing ResourceManager: {e}")
-
-    # Initialization helpers
-    def _probe_instruments(self, instruments, label):
-        print(f"Found {label} instruments:")
+    def _probe_instruments(self, instruments):
+        print(f"Found instruments:")
         failed = False
 
         for resource in instruments:
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
-                print(f"{resource} -> {idn.strip()}")
+                print(f"Found {resource}: {idn.strip()}")
                 inst.close()
             except Exception as e:
-                print(f"{resource} -> Connection failed: {e}")
+                print(f"Connection failed {resource}: {e}")
                 failed = True
 
         return failed
 
     def _find_by_idn(self, resources, keyword):
+        print(f"Selecting {keyword} instruments:")
         for resource in resources:
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
                 if keyword.upper() in idn.upper():
-                    print(f"Selected {resource} ({idn.strip()})")
+                    print(f"Selected {resource}: {idn.strip()}")
                     return inst
                 inst.close()
             except Exception as e:
-                print(f"Error identifying {resource}: {e}")
+                print(f"Connection failed {resource}: {e}")
         return None
 
     # API
-    def initialize_voltmeter(self):
-        """Perform one-time reset/clear."""
+    def set_voltmeter(self):
         try:
             self.voltmeter.write("*RST")
             self.voltmeter.write("*CLS")
-        except Exception as e:
-            raise RuntimeError(f"Failed to initialize voltmeter: {e}")
 
-    def set_voltmeter(self, command = "CONF:VOLT:AC", plc = 0.02, samples = 50):
-        try:
-            self.voltmeter.write(command)
-            # Power line cycles are reduced to reduce measurement
-            self.voltmeter.write(f"VOLT:AC:NPLC {plc}")
-            self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")
-            #self.voltmeter.write(f"SAMP:COUN {samples}")
+            self.voltmeter.write("CONF:VOLT:DC 10")
+            self.voltmeter.write("SENS:VOLT:DC:NPLC 0.01")
+            self.voltmeter.write("SENS:VOLT:DC:RANG 10")
+
+            self.voltmeter.write("TRIG:SOUR IMM")
+            self.voltmeter.write("SAMP:COUN INF")   # continuous sampling
+
+            self.voltmeter.write("TRAC:POIN 10000") # buffer size
+            self.voltmeter.write("TRAC:FEED SENSE")
+            self.voltmeter.write("TRAC:DEL:ENAB ON")
+
+            self.voltmeter.write("INIT")  # start once
+
         except Exception as e:
             raise RuntimeError(f"Failed to configure voltmeter: {e}")
 
-    def set_wavegen(self, freq = 1e3, v_pp = 2.5, offset = 2.5):
+    # WARNING: Models trained on data with these default parameters for wavegen!
+    # Don't touch unless absolutely needed
+    def set_wavegen(self, freq=5e3, v_pp=2.5, offset=2.5):
         try:
             command = f"APPL:SIN {freq},{v_pp},{offset}"
             self.wavegen.write(command)
-            self.wavegen.write("")
         except Exception as e:
             raise RuntimeError(f"Failed to configure wave generator: {e}")
 
     def get_voltage(self):
         try:
-            self.voltmeter.write("READ?")
-            response = self.voltmeter.read()
+            time.sleep(0.05)  # wait ~50 ms for new samples
 
-            # Get values from VISA response
-            values = [float(x) for x in response.split(',')]
+            # Read ONLY newest N samples
+            N = 20  # ~50 ms worth at ~360 Hz
 
-            # Return average of samples
-            return sum(values)/len(values)
-        
+            self.voltmeter.write(f"TRAC:DATA? -{N}")
+            raw_data = self.voltmeter.read()
+
+            samples = np.array([float(x) for x in raw_data.strip().split(",")])
+
+            rms_value = np.sqrt(np.mean(samples**2))
+            return rms_value
+
         except Exception as e:
             raise RuntimeError(f"Voltage read failed: {e}")
 
 
 # Testing
+def basic_device_test():
+    with DeviceManager() as dm:
+        dm.set_voltmeter()
+        dm.set_wavegen()
+
+        for i in range(25):
+            voltage = dm.get_voltage()
+            print(f"{i}: {voltage:.6f}")
+
+
 if __name__ == "__main__":
     try:
-        with DeviceManager() as dm:
-            dm.initialize_voltmeter()
-            dm.set_voltmeter()
-            dm.set_wavegen()
-
-            for i in range(10):
-                voltage = dm.get_voltage()
-                print(f"{i}: {voltage:.6f}")
-
+        print("Running basic device test...")
+        basic_device_test()
     except RuntimeError as e:
         print(f"Expected error: {e}")
     except Exception as e:
