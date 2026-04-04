@@ -144,7 +144,7 @@ class DeviceManager:
             print(f"Approx RMS: {rms_value} V")
 
             # Stop acquisition
-            voltmeter.write("ABOR")
+            self.voltmeter.write("ABOR")
 
             return rms_value
 
