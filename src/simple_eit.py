@@ -25,7 +25,7 @@ class SimpleEIT:
         self.dm = DeviceManager()
 
         # Configure devices
-        self.dm.set_voltmeter()
+        self.dm.set_scope()
         self.dm.set_wavegen()
 
         # Classification model

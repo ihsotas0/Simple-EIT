@@ -12,7 +12,7 @@ class DeviceManager:
 
         self.rm = pyvisa.ResourceManager()
         self.wavegen = None
-        self.voltmeter = None
+        self.scope = None
 
         resources = self.rm.list_resources()
 
@@ -26,15 +26,15 @@ class DeviceManager:
             raise RuntimeError("Can't initialize devices!")
 
         # Select devices
-        self.voltmeter = self._find_by_idn(resources, "KEYSIGHT")
+        self.scope = self._find_by_idn(resources, "KEYSIGHT")
         self.wavegen = self._find_by_idn(resources, "AGILENT")
 
-        if self.voltmeter is None or self.wavegen is None:
+        if self.scope is None or self.wavegen is None:
             self.close()
             raise RuntimeError("Could not identify required instruments via IDN!")
 
         # Set timeouts (ms)
-        self.voltmeter.timeout = 5000
+        self.scope.timeout = 5000
         self.wavegen.timeout = 5000
 
         print("Devices initialized successfully.")
@@ -50,7 +50,7 @@ class DeviceManager:
     def close(self):
         print("Closing device connections...")
         self._close_resource(self.wavegen)
-        self._close_resource(self.voltmeter)
+        self._close_resource(self.scope)
         self._close_resource(self.rm)
         print("Done!")
 
@@ -93,23 +93,16 @@ class DeviceManager:
         return None
 
     # API
-    def set_voltmeter(self):
+    def set_scope(self):
         try:
-            self.voltmeter.write("*RST")
-            self.voltmeter.write("*CLS")
+            self.scope.write("*RST")
+            self.scope.write(":CHAN1:DISP ON")
+            self.scope.write(":CHAN1:SCAL 1.0")         # 1 V/div
+            self.scope.write(":TIM:SCAL 1E-3")         # 1 ms/div
+            self.scope.write(":TRIG:EDGE:SOUR CHAN1")
+            self.scope.write(":TRIG:EDGE:LEV 0.5")
 
-            self.voltmeter.write("CONF:VOLT:DC 10")
-            self.voltmeter.write("SENS:VOLT:DC:NPLC 0.01")
-            self.voltmeter.write("SENS:VOLT:DC:RANG 10")
-
-            self.voltmeter.write("TRIG:SOUR IMM")
-            self.voltmeter.write("SAMP:COUN INF")   # continuous sampling
-
-            self.voltmeter.write("TRAC:POIN 10000") # buffer size
-            self.voltmeter.write("TRAC:FEED SENSE")
-            self.voltmeter.write("TRAC:DEL:ENAB ON")
-
-            self.voltmeter.write("INIT")  # start once
+            self.scope.write("INIT")  # start once
 
         except Exception as e:
             raise RuntimeError(f"Failed to configure voltmeter: {e}")
@@ -130,8 +123,8 @@ class DeviceManager:
             # Read ONLY newest N samples
             N = 20  # ~50 ms worth at ~360 Hz
 
-            self.voltmeter.write(f"TRAC:DATA? -{N}")
-            raw_data = self.voltmeter.read()
+            self.scope.write(f"TRAC:DATA? -{N}")
+            raw_data = self.scope.read()
 
             samples = np.array([float(x) for x in raw_data.strip().split(",")])
 
@@ -145,7 +138,7 @@ class DeviceManager:
 # Testing
 def basic_device_test():
     with DeviceManager() as dm:
-        dm.set_voltmeter()
+        dm.set_scope()
         dm.set_wavegen()
 
         for i in range(25):
