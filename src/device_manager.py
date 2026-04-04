@@ -95,18 +95,18 @@ class DeviceManager:
         try:
             self.scope.write("*RST")
             self.scope.write(":CHAN1:DISP ON")
-            self.scope.write(":CHAN1:SCAL 2")         # 2 V/div
-            self.scope.write(":TIM:SCAL 2E-4")         # 0.2 ms/div
+            self.scope.write(":CHAN1:SCAL 1")  # 1 V/div
+            self.scope.write(":TIM:SCAL 2E-4")  # 0.2 ms/div
             self.scope.write(":TRIG:EDGE:SOUR CHAN1")
             self.scope.write(":TRIG:EDGE:LEV 0")
-            self.scope.write(":CHAN1:COUP AC")
+            self.scope.write(":CHAN1:COUP AC")  # Removes DC offset from RMS calculation
 
         except Exception as e:
             raise RuntimeError(f"Failed to configure scope: {e}")
 
     # WARNING: Models trained on data with these default parameters for wavegen!
     # Don't touch unless absolutely needed
-    def set_wavegen(self, freq=5e3, v_pp=2.5, offset=2.5):
+    def set_wavegen(self, freq=10e3, v_pp=2.5, offset=2.5):
         try:
             command = f"APPL:SIN {freq},{v_pp},{offset}"
             self.wavegen.write(command)
@@ -115,15 +115,15 @@ class DeviceManager:
 
     def get_voltage(self):
         try:
-            
+
             # Trigger a fresh acquisition (fast single capture)
             self.scope.write(":DIG")
-            
+
             # Wait until acquisition completes
             self.scope.query("*OPC?")
-            
+
             # Query RMS voltage directly from scope
-            rms_value = float(self.scope.query(":MEAS:VRMS? CHAN1"))            
+            rms_value = float(self.scope.query(":MEAS:VRMS? CHAN1"))
             return rms_value
 
         except Exception as e:

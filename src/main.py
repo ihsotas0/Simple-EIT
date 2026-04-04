@@ -9,6 +9,8 @@ from simple_eit import SimpleEIT
 
 print("Running full Simple EIT...")
 
+# TODO: Object selector
+
 # List classifiers, kinda lazy but it works
 
 # List only callable, non-dunder functions
