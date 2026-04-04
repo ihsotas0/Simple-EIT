@@ -136,15 +136,21 @@ class DeviceManager:
 
     def get_voltage(self):
         try:
-           
-            # Initiate acquisition
-            # Fetch binary data
-            data = self.voltmeter.query_binary_values("FETC?", datatype='f', container=np.array)
+
+            self.voltmeter.write("ABOR")
+            self.voltmeter.write("INIT")
+
+            # Wait until acquisition finishes
+            self.voltmeter.query("*OPC?")
+
+            data = self.voltmeter.query_binary_values(
+                "FETC?",
+                datatype='f',
+                container=np.array
+            )
+
             rms = np.sqrt(np.mean(data**2))
             return rms
-            print(f"RMS Voltage: {rms:.6f} V")
-            print(f"Samples collected: {len(data)}")
-
 
         except Exception as e:
             raise RuntimeError(f"Voltage read failed: {e}")
