@@ -95,19 +95,21 @@ class DeviceManager:
     # API
     def set_voltmeter(self):
         try:
-            # Reset and clear
             self.voltmeter.write("*RST")
             self.voltmeter.write("*CLS")
 
-            # Configure DC volts for super fast measurement
-            self.voltmeter.write("CONF:VOLT:DC 10")  # 10 V range
-            self.voltmeter.write("SAMP:COUN 50")  # Take 50 samples per burst
-            self.voltmeter.write("SENS:VOLT:DC:NPLC 0.01")  # Fastest reading (~360 Hz)
+            self.voltmeter.write("CONF:VOLT:DC 10")
+            self.voltmeter.write("SENS:VOLT:DC:NPLC 0.01")
             self.voltmeter.write("SENS:VOLT:DC:RANG 10")
-            self.voltmeter.write("TRAC:DEL:ENAB ON")
-            self.voltmeter.write("TRAC:FEED SENSE")
+
             self.voltmeter.write("TRIG:SOUR IMM")
-            self.voltmeter.write("TRIG:SOUR IMM")  # Start continuous triggering
+            self.voltmeter.write("SAMP:COUN INF")   # continuous sampling
+
+            self.voltmeter.write("TRAC:POIN 10000") # buffer size
+            self.voltmeter.write("TRAC:FEED SENSE")
+            self.voltmeter.write("TRAC:DEL:ENAB ON")
+
+            self.voltmeter.write("INIT")  # start once
 
         except Exception as e:
             raise RuntimeError(f"Failed to configure voltmeter: {e}")
@@ -123,25 +125,17 @@ class DeviceManager:
 
     def get_voltage(self):
         try:
-            # Start acquisition
-            self.voltmeter.write("INIT")
+            time.sleep(0.05)  # wait ~50 ms for new samples
 
-            time.sleep(0.05)  # 50 ms
+            # Read ONLY newest N samples
+            N = 20  # ~50 ms worth at ~360 Hz
 
-            # Fetch the buffer data
-            self.voltmeter.write("TRAC:DATA?")
+            self.voltmeter.write(f"TRAC:DATA? -{N}")
             raw_data = self.voltmeter.read()
 
-            # Convert to list of floats
-            samples = [float(x) for x in raw_data.strip().split(",")]
+            samples = np.array([float(x) for x in raw_data.strip().split(",")])
 
-            # Compute approximate RMS of last 50 ms segment
-            rms_value = np.sqrt(np.mean(np.square(samples)))
-            print(f"Approx RMS: {rms_value} V")
-
-            # Stop acquisition
-            self.voltmeter.write("ABOR")
-
+            rms_value = np.sqrt(np.mean(samples**2))
             return rms_value
 
         except Exception as e:
