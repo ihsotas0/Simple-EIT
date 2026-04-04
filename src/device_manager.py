@@ -99,19 +99,15 @@ class DeviceManager:
             self.voltmeter.write("*RST")
             self.voltmeter.write("*CLS")
 
-            # Configure AC volts in fast mode
-            self.voltmeter.write("CONF:VOLT:AC 5,DEF")
-            self.voltmeter.write("SENS:VOLT:AC:BAND FAST")
-            self.voltmeter.write("VOLT:AC:ZERO:AUTO OFF")
-            self.voltmeter.write("SENS:VOLT:AC:RANG 5")
-
-            # Configure trace buffer for digitizer acquisition
-            self.voltmeter.write("TRAC:POIN 100")  # Buffer n points
-            self.voltmeter.write("TRAC:FEED SENSE")  # Feed measurements to trace
-            self.voltmeter.write("TRAC:DEL:ENAB ON")  # Enable buffer overwrite
-
-            # Start continuous triggering
+            # Configure DC volts for super fast measurement
+            self.voltmeter.write("CONF:VOLT:DC 10")  # 10 V range
+            self.voltmeter.write("SAMP:COUN 50")  # Take 50 samples per burst
+            self.voltmeter.write("SENS:VOLT:DC:NPLC 0.01")  # Fastest reading (~360 Hz)
+            self.voltmeter.write("SENS:VOLT:DC:RANG 10")
+            self.voltmeter.write("TRAC:DEL:ENAB ON")
+            self.voltmeter.write("TRAC:FEED SENSE")
             self.voltmeter.write("TRIG:SOUR IMM")
+            self.voltmeter.write("TRIG:SOUR IMM")  # Start continuous triggering
 
         except Exception as e:
             raise RuntimeError(f"Failed to configure voltmeter: {e}")
