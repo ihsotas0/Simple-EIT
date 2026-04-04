@@ -112,7 +112,7 @@ class DeviceManager:
             self.voltmeter.write("DIG:VOLT:APER 20E-6")
 
             # Number of samples
-            num_samples = 5000
+            num_samples = 5
             self.voltmeter.write(f"SAMP:COUN {num_samples}")
 
             # Trigger immediately
