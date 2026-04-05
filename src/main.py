@@ -2,6 +2,7 @@ import threading
 
 import matplotlib.pyplot as plt
 import numpy as np
+from functools import partial
 from matplotlib.animation import FuncAnimation
 
 import classifiers as cf
@@ -30,10 +31,8 @@ obj_in = input("Choose object by name: ")
 if obj_in not in cf.OBJECTS:
     raise RuntimeError("Object does not exist!")
 
-# Some functional magic :)
-classifier = getattr(cf, cf_in)
-
-app = SimpleEIT(lambda x: classifier(v=x, obj=obj_in))
+# Some functional magic (even better)
+app = SimpleEIT(partial(getattr(cf, cf_in), obj=obj_in))
 
 # Shared data + synchronization
 latest_data = np.zeros((2, 2))
