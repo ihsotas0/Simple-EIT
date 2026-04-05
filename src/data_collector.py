@@ -47,11 +47,15 @@ def quadrant_object_data(object_name):
         if csvfile.tell() == 0:
             writer.writerow(["Timestamp", "Voltage_data"])
 
-        # Run app 100 times and append the result to the CSV file
-        for _ in range(100):
-            print("Getting new data...")
+        # Run app 160 times and append the result to the CSV file
+        for i in range(160):
+            print(f"Getting new data: [{i}]")
+
             v = app.run(testing=True).flatten()
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            if i % 10 == 0 and i != 0:
+                print("Move to new section BEFORE pressing enter!")
 
             # Prompt user for a label, defaulting to the previous label
             label = input(
@@ -64,6 +68,8 @@ def quadrant_object_data(object_name):
 
             writer.writerow([timestamp] + list(v) + [label])
             previous_label = label
+
+            
 
 
 if __name__ == "__main__":
