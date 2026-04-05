@@ -9,24 +9,20 @@ from simple_eit import SimpleEIT
 
 print("Running full Simple EIT...")
 
-# TODO: Object selector
-
-# List classifiers, kinda lazy but it works
-
 # List only callable, non-dunder functions
 functions = [
-    name for name in dir(cf)
+    name
+    for name in dir(cf)
     if callable(getattr(cf, name)) and not name.startswith("__")
 ]
 
-print(f"List of classifiers: {functions}")
+print(f"List of classifiers (some work only for certain objects): {functions}")
 
 cf_in = input("Choose classifier by function name: ")
 
 if cf_in not in functions:
     raise RuntimeError("Classifier does not exist!")
 
-# No try/catch, just type the function correctly please :)
 app = SimpleEIT(getattr(cf, cf_in))
 
 # Shared data + synchronization

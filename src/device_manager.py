@@ -104,14 +104,13 @@ class DeviceManager:
         except Exception as e:
             raise RuntimeError(f"Failed to configure scope: {e}")
 
-    # WARNING: Models trained on data with these default parameters for wavegen!
-    # Don't touch unless absolutely needed
-    def set_wavegen(self, freq=10e3, v_pp=2.5, offset=2.5):
+    # WARNING: Models trained on data with these parameters!
+    def set_wavegen(self, freq=10e3, v_pp=10, offset=0):
         try:
             command = f"APPL:SIN {freq},{v_pp},{offset}"
             self.wavegen.write(command)
         except Exception as e:
-            raise RuntimeError(f"Failed to configure wave generator: {e}")
+            raise RuntimeError(f"Failed to configure wavegen: {e}")
 
     def get_voltage(self):
         try:
@@ -138,7 +137,7 @@ def basic_device_test():
 
         for i in range(25):
             voltage = dm.get_voltage()
-            print(f"{i}: {voltage:.6f}")
+            print(f"Test {i}: {voltage}")
 
 
 if __name__ == "__main__":
