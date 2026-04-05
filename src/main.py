@@ -9,12 +9,31 @@ from simple_eit import SimpleEIT
 
 print("Running full Simple EIT...")
 
-# List classifiers, kinda lazy but it works
-print(dir(cf))
+# List only callable, non-dunder functions
+functions = [
+    name
+    for name in dir(cf)
+    if callable(getattr(cf, name)) and not name.startswith("__")
+]
+
+print(f"List of classifiers: {functions}")
+
 cf_in = input("Choose classifier by function name: ")
 
-# No try/catch, just type the function correctly please :)
-app = SimpleEIT(getattr(cf, cf_in))
+if cf_in not in functions:
+    raise RuntimeError("Classifier does not exist!")
+
+print(f"List of objects: {cf.OBJECTS}")
+
+obj_in = input("Choose object by name: ")
+
+if obj_in not in cf.OBJECTS:
+    raise RuntimeError("Object does not exist!")
+
+# Some functional magic :)
+classifier = getattr(cf, cf_in)
+
+app = SimpleEIT(lambda x: classifier(v=x, obj=obj_in))
 
 # Shared data + synchronization
 latest_data = np.zeros((2, 2))

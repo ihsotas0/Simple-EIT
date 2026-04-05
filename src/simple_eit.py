@@ -9,7 +9,10 @@ from device_manager import DeviceManager
 
 class SimpleEIT:
 
-    def __init__(self, model):
+    def __init__(self, model=lambda v: np.array([0, 0, 0, 0]), freq=10e3):
+
+        # For frequency testing
+        self.freq = freq
 
         # GPIO controllers for multiplexers
         # MUX1 controls S+ and V+ (A0, A1)
@@ -25,8 +28,8 @@ class SimpleEIT:
         self.dm = DeviceManager()
 
         # Configure devices
-        self.dm.set_voltmeter()
-        self.dm.set_wavegen()
+        self.dm.set_scope()
+        self.dm.set_wavegen(freq=self.freq)
 
         # Classification model
         self.model = model
@@ -36,12 +39,12 @@ class SimpleEIT:
 
         # (selection for MUX 1, selection for MUX 2, voltage measurement index)
         configs = [
-            (4, 4, 1),
-            (1, 3, 2),
-            (2, 1, 3),
-            (3, 2, 4),
-            (1, 1, 5),  # Diag: Not needed for 2nd highest method
-            (2, 3, 6),  # Diag
+            (2, 1, 1),  # V_AD
+            (3, 2, 2),  # V_AB
+            (1, 3, 3),  # V_BC
+            (4, 4, 4),  # V_CD
+            (2, 3, 5),  # V_AC: Diag
+            (1, 1, 6),  # V_BD: Diag
         ]
 
         for s1, s2, index in configs:
@@ -53,33 +56,39 @@ class SimpleEIT:
             # Switch MUX state
             self._set_mux_state(self.mux1, s1)  # Apply state to mux1
             self._set_mux_state(self.mux2, s2)  # Apply state to mux2
-            print(f"Switched MUX 1: S{s1}, MUX 2: S{s2}, Config: {index}")
 
             # End MUX switch (turn measurement leads on)
             self.mux_toggle[0].on()
             self.mux_toggle[1].on()
 
             # Get voltage, assign to index
-            # (V_AB, V_AD, V_BC, V_CD, V_AC, V_BD)
+            # (V_AD, V_AB, V_BC, V_CD, V_AC, V_BD)
             v_return[index - 1] = self.dm.get_voltage()
 
         print(f"Measured voltages: {v_return}")
 
         return v_return
 
-    def run(self):
+    def run(self, testing=False, freq=10e3):
+
+        # For frequency testing
+        if freq is not self.freq:
+            self.dm.set_wavegen(freq=freq)
 
         # Get the measured voltages
-        # (V_AB, V_AD, V_BC, V_CD, V_AC, V_BD)
+        # (V_AD, V_AB, V_BC, V_CD, V_AC, V_BD)
         v = self.get_voltages()
 
-        # Use classifier
-        v_raw = self.model(v)
+        if testing is True:
+            return v
+        else:
+            # Use classifier
+            v_raw = self.model(v)
 
-        # Matrix OHR locations:
-        # [AD AB]
-        # [CD BC]
-        return v_raw.reshape(2, 2)
+            # Matrix OHR locations:
+            # [AD AB]
+            # [CD BC]
+            return v_raw.reshape(2, 2)
 
     # Context Manager
     def __enter__(self):

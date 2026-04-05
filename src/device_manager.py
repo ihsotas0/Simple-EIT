@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 import pyvisa
 
@@ -12,7 +10,7 @@ class DeviceManager:
 
         self.rm = pyvisa.ResourceManager()
         self.wavegen = None
-        self.voltmeter = None
+        self.scope = None
 
         resources = self.rm.list_resources()
 
@@ -26,15 +24,15 @@ class DeviceManager:
             raise RuntimeError("Can't initialize devices!")
 
         # Select devices
-        self.voltmeter = self._find_by_idn(resources, "KEYSIGHT")
+        self.scope = self._find_by_idn(resources, "KEYSIGHT")
         self.wavegen = self._find_by_idn(resources, "AGILENT")
 
-        if self.voltmeter is None or self.wavegen is None:
+        if self.scope is None or self.wavegen is None:
             self.close()
             raise RuntimeError("Could not identify required instruments via IDN!")
 
         # Set timeouts (ms)
-        self.voltmeter.timeout = 5000
+        self.scope.timeout = 5000
         self.wavegen.timeout = 5000
 
         print("Devices initialized successfully.")
@@ -50,7 +48,7 @@ class DeviceManager:
     def close(self):
         print("Closing device connections...")
         self._close_resource(self.wavegen)
-        self._close_resource(self.voltmeter)
+        self._close_resource(self.scope)
         self._close_resource(self.rm)
         print("Done!")
 
@@ -93,49 +91,38 @@ class DeviceManager:
         return None
 
     # API
-    def set_voltmeter(self):
+    def set_scope(self):
         try:
-            self.voltmeter.write("*RST")
-            self.voltmeter.write("*CLS")
-
-            self.voltmeter.write("CONF:VOLT:DC 10")
-            self.voltmeter.write("SENS:VOLT:DC:NPLC 0.01")
-            self.voltmeter.write("SENS:VOLT:DC:RANG 10")
-
-            self.voltmeter.write("TRIG:SOUR IMM")
-            self.voltmeter.write("SAMP:COUN INF")   # continuous sampling
-
-            self.voltmeter.write("TRAC:POIN 10000") # buffer size
-            self.voltmeter.write("TRAC:FEED SENSE")
-            self.voltmeter.write("TRAC:DEL:ENAB ON")
-
-            self.voltmeter.write("INIT")  # start once
+            self.scope.write("*RST")
+            self.scope.write(":CHAN1:DISP ON")
+            self.scope.write(":CHAN1:SCAL 1")  # 1 V/div
+            self.scope.write(":TIM:SCAL 2E-4")  # 0.2 ms/div
+            self.scope.write(":TRIG:EDGE:SOUR CHAN1")
+            self.scope.write(":TRIG:EDGE:LEV 0")
+            self.scope.write(":CHAN1:COUP AC")  # Removes DC offset from RMS calculation
 
         except Exception as e:
-            raise RuntimeError(f"Failed to configure voltmeter: {e}")
+            raise RuntimeError(f"Failed to configure scope: {e}")
 
-    # WARNING: Models trained on data with these default parameters for wavegen!
-    # Don't touch unless absolutely needed
-    def set_wavegen(self, freq=5e3, v_pp=2.5, offset=2.5):
+    # WARNING: Models trained on data with these parameters!
+    def set_wavegen(self, freq=10e3, v_pp=10, offset=0):
         try:
             command = f"APPL:SIN {freq},{v_pp},{offset}"
             self.wavegen.write(command)
         except Exception as e:
-            raise RuntimeError(f"Failed to configure wave generator: {e}")
+            raise RuntimeError(f"Failed to configure wavegen: {e}")
 
     def get_voltage(self):
         try:
-            time.sleep(0.05)  # wait ~50 ms for new samples
 
-            # Read ONLY newest N samples
-            N = 20  # ~50 ms worth at ~360 Hz
+            # Trigger a fresh acquisition (fast single capture)
+            self.scope.write(":DIG")
 
-            self.voltmeter.write(f"TRAC:DATA? -{N}")
-            raw_data = self.voltmeter.read()
+            # Wait until acquisition completes
+            self.scope.query("*OPC?")
 
-            samples = np.array([float(x) for x in raw_data.strip().split(",")])
-
-            rms_value = np.sqrt(np.mean(samples**2))
+            # Query RMS voltage directly from scope
+            rms_value = float(self.scope.query(":MEAS:VRMS? CHAN1"))
             return rms_value
 
         except Exception as e:
@@ -145,12 +132,12 @@ class DeviceManager:
 # Testing
 def basic_device_test():
     with DeviceManager() as dm:
-        dm.set_voltmeter()
+        dm.set_scope()
         dm.set_wavegen()
 
         for i in range(25):
             voltage = dm.get_voltage()
-            print(f"{i}: {voltage:.6f}")
+            print(f"Test {i}: {voltage}")
 
 
 if __name__ == "__main__":

@@ -9,8 +9,7 @@ from simple_eit import SimpleEIT
 
 # Testing
 def no_object_data():
-    # No classifier, just return the raw voltages
-    app = SimpleEIT(lambda x: x)
+    app = SimpleEIT()
 
     # Path to the CSV file (run script in this directory please!)
     csv_file_path = os.path.join("..", "data", "instrument_data.csv")
@@ -23,16 +22,17 @@ def no_object_data():
         if csvfile.tell() == 0:
             writer.writerow(["Timestamp", "Voltage_data"])
 
-        # Run app 100 times and append the result to the CSV file
-        for _ in range(100):
-            v = app.run().flatten()
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            writer.writerow([timestamp] + list(v))
+        # Test some different frequencies
+        for freq in [1e3, 5e3, 10e3, 20e3]:
+            # Run app 100 times and append the result to the CSV file
+            for _ in range(100):
+                v = app.run(testing=True, freq=freq).flatten()
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                writer.writerow([timestamp] + list(v))
 
 
 def quadrant_object_data(object_name):
-    # "No classifier", just return the raw voltages
-    app = SimpleEIT(lambda x: x)
+    app = SimpleEIT()
 
     # Replace "instrument" with the object_name in the file name
     csv_file_path = os.path.join("..", "data", f"{object_name}_data.csv")
@@ -47,10 +47,15 @@ def quadrant_object_data(object_name):
         if csvfile.tell() == 0:
             writer.writerow(["Timestamp", "Voltage_data"])
 
-        # Run app 100 times and append the result to the CSV file
-        for _ in range(100):
-            v = app.run().flatten()
+        # Run app 160 times and append the result to the CSV file
+        for i in range(160):
+            print(f"Getting new data: [{i}]")
+
+            v = app.run(testing=True).flatten()
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            if i % 10 == 0 and i != 0:
+                print("Move to new section BEFORE pressing enter!")
 
             # Prompt user for a label, defaulting to the previous label
             label = input(
@@ -63,6 +68,8 @@ def quadrant_object_data(object_name):
 
             writer.writerow([timestamp] + list(v) + [label])
             previous_label = label
+
+            
 
 
 if __name__ == "__main__":
