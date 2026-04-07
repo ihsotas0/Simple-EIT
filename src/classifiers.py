@@ -2,14 +2,23 @@ import numpy as np
 
 # Collection of different classifiers (static functions only, trained elsewhere!)
 # https://en.wikipedia.org/wiki/Discriminative_model
-# input (v): (V_AD, V_AB, V_BC, V_CD, V_AC, V_BD)
-# output (P(q|v)): [AD AB CD BC] (sum=1)
+# input (v): [V_AD, V_AB, V_BC, V_CD, V_AC, V_BD]
+# output (P(L|v)): (sum=1)
+# [AB_1, AB_2, BC_1, BC_2, CD_1, CD_2, AD_1, AD_2]
+# [AB_3, AB_4, BC_3, BC_4, CD_3, CD_4, AD_3, AD_4]
+
 
 OBJECTS = ["finger", "vert_eraser", "horz_eraser"]
 
-def linear_classifier(v, obj):
-    
+# If a classifier only works for [AB, BC, CD, AD], then divide each quadrant
+# probability by 4 and set the subquadrants equal to that
+def __from_16_to_4(output):
     pass
+
+def linear_classifier(v, obj):
+
+    pass
+
 
 def mse_lut(v, obj):
     # input: [V_AB, V_AD, V_BC, V_CD, V_AC, V_BD]
@@ -20,9 +29,8 @@ def mse_lut(v, obj):
     # CD = np.array([0.338238095238095, 0.626380952380952, 0.798285714285714, 0.471095238095238, 0.582333333333333, 0.788333333333333])
     # AD = np.array([0.453526315789474, 0.694526315789474, 1.05936842105263, 0.600578947368421, 0.670894736842105, 1.08905263157895])
 
-
     AB = np.array([0.3935, 0.8155, 0.680275, 0.535575, 0.69945, 0.676225])
-    BC = np.array([0.469475, 0.98365, 0.7295, 0.5296, 0.87585, 0.716475 ])
+    BC = np.array([0.469475, 0.98365, 0.7295, 0.5296, 0.87585, 0.716475])
     CD = np.array([0.386225, 0.93265, 0.7363, 0.518525, 0.8448, 0.721925])
     AD = np.array([0.371925, 0.92035, 0.77965, 0.540925, 0.826775, 0.7696])
 
@@ -50,9 +58,8 @@ def weighted_mse_lut(v, obj):
     # CD = np.array([0.338238095238095, 0.626380952380952, 0.798285714285714, 0.471095238095238, 0.582333333333333, 0.788333333333333])
     # AD = np.array([0.453526315789474, 0.694526315789474, 1.05936842105263, 0.600578947368421, 0.670894736842105, 1.08905263157895])
 
-
     AB = np.array([0.3935, 0.8155, 0.680275, 0.535575, 0.69945, 0.676225])
-    BC = np.array([0.469475, 0.98365, 0.7295, 0.5296, 0.87585, 0.716475 ])
+    BC = np.array([0.469475, 0.98365, 0.7295, 0.5296, 0.87585, 0.716475])
     CD = np.array([0.386225, 0.93265, 0.7363, 0.518525, 0.8448, 0.721925])
     AD = np.array([0.371925, 0.92035, 0.77965, 0.540925, 0.826775, 0.7696])
 
@@ -69,5 +76,3 @@ def weighted_mse_lut(v, obj):
     out[min_idx] = 1
 
     return out
-
-
