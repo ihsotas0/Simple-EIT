@@ -12,7 +12,12 @@ OBJECTS = ["finger", "vert_eraser", "horz_eraser"]
 
 # If a classifier only works for [AB, BC, CD, AD], then divide each quadrant
 # probability by 4 and set the subquadrants equal to that
-def __from_16_to_4(output):
+def __from_4_to_16(old_output):
+    new_output = np.zeros((2,8))
+    new_output[:,0:2] = old_output[0] / 4
+    new_output[:,2:4] = old_output[1] / 4
+    new_output[:,4:6] = old_output[2] / 4
+    new_output[:,6:8] = old_output[3] / 4
     pass
 
 def linear_classifier(v, obj):
