@@ -4,21 +4,21 @@ import numpy as np
 # https://en.wikipedia.org/wiki/Discriminative_model
 # input (v): [V_AD, V_AB, V_BC, V_CD, V_AC, V_BD]
 # output (P(L|v)): (sum=1)
-# [AB_1, AB_2, BC_1, BC_2, CD_1, CD_2, AD_1, AD_2]
-# [AB_3, AB_4, BC_3, BC_4, CD_3, CD_4, AD_3, AD_4]
+# [AB_1, AB_2, AD_1, AD_2, CD_1, CD_2, BC_1, BC_2]
+# [AB_3, AB_4, AD_3, AD_4, CD_3, CD_4, BC_3, BC_4]
 
 
 OBJECTS = ["finger", "vert_eraser", "horz_eraser"]
 
-# If a classifier only works for [AB, BC, CD, AD], then divide each quadrant
+
+# If a classifier only works for [AB, AD, CD, BC], then divide each quadrant
 # probability by 4 and set the subquadrants equal to that
 def __from_4_to_16(old_output):
-    new_output = np.zeros((2,8))
-    new_output[:,0:2] = old_output[0] / 4
-    new_output[:,2:4] = old_output[1] / 4
-    new_output[:,4:6] = old_output[2] / 4
-    new_output[:,6:8] = old_output[3] / 4
-    pass
+    new_output = np.zeros((2, 8))
+    for i in range(4):
+        new_output[:, 2 * i : 2 + 2 * i] = old_output[i] / 4
+    return new_output
+
 
 def linear_classifier(v, obj):
 
@@ -51,7 +51,7 @@ def mse_lut(v, obj):
     out = np.zeros(4)
     out[min_idx] = 1
 
-    return out
+    return __from_4_to_16(out)
 
 
 def weighted_mse_lut(v, obj):

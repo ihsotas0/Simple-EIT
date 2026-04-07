@@ -7,7 +7,7 @@ import numpy as np
 from simple_eit import SimpleEIT
 
 
-# Testing
+# Takes about 30 minutes
 def no_object_data():
     app = SimpleEIT()
 
@@ -20,17 +20,29 @@ def no_object_data():
 
         # Check if the file is empty and write header if it's a new file
         if csvfile.tell() == 0:
-            writer.writerow(["Timestamp", "Voltage_data"])
+            writer.writerow(
+                [
+                    "Timestamp",
+                    "Frequency (Hz)",
+                    "V_AB",
+                    "V_AD",
+                    "V_BC",
+                    "V_CD",
+                    "V_AC",
+                    "V_BD",
+                ]
+            )
 
         # Test some different frequencies
         for freq in [1e3, 5e3, 10e3, 20e3]:
-            # Run app 100 times and append the result to the CSV file
-            for _ in range(100):
-                v = app.run(testing=True, freq=freq).flatten()
+            # Run app 1000 times and append the result to the CSV file
+            for _ in range(1000):
+                v = app.run(testing=True, freq=freq)
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                writer.writerow([timestamp] + list(v))
+                writer.writerow([timestamp, int(freq)] + list(v))
 
 
+# Takes about 30 minutes per object
 def quadrant_object_data(object_name):
     app = SimpleEIT()
 
@@ -39,37 +51,59 @@ def quadrant_object_data(object_name):
 
     previous_label = ""
 
+    locations = [
+        "AB_1",
+        "AB_2",
+        "AB_3",
+        "AB_4",
+        "AD_1",
+        "AD_2",
+        "AD_3",
+        "AD_4",
+        "BC_1",
+        "BC_2",
+        "BC_3",
+        "BC_4",
+        "CD_1",
+        "CD_2",
+        "CD_3",
+        "CD_4",
+    ]
+
     # Open the CSV file in append mode
     with open(csv_file_path, mode="a", newline="") as csvfile:
         writer = csv.writer(csvfile)
 
         # Check if the file is empty and write header if it's a new file
         if csvfile.tell() == 0:
-            writer.writerow(["Timestamp", "Voltage_data"])
-
-        # Run app 160 times and append the result to the CSV file
-        for i in range(160):
-            print(f"Getting new data: [{i}]")
-
-            v = app.run(testing=True).flatten()
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            if i % 10 == 0 and i != 0:
-                print("Move to new section BEFORE pressing enter!")
-
-            # Prompt user for a label, defaulting to the previous label
-            label = input(
-                f"Enter a label for this data (previous label: {previous_label}): "
+            writer.writerow(
+                [
+                    "Timestamp",
+                    "Location",
+                    "V_AB",
+                    "V_AD",
+                    "V_BC",
+                    "V_CD",
+                    "V_AC",
+                    "V_BD",
+                ]
             )
 
-            # If the user enters nothing, use previous label
-            if not label:
-                label = previous_label
+        for location in locations:
+            print("fMove object to: {location}")
+            _ = input("Press enter when ready...")
 
-            writer.writerow([timestamp] + list(v) + [label])
-            previous_label = label
+            # Run app 200 times and append the result to the CSV file
+            for i in range(200):
 
-            
+                print(f"Measurement: {i}/200")
+                v = app.run(testing=True)
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                writer.writerow([timestamp, location] + list(v))
+                previous_label = label
+
+            print("Done, next location")
 
 
 if __name__ == "__main__":

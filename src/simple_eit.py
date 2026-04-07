@@ -86,8 +86,8 @@ class SimpleEIT:
             v_raw = self.model(v)
 
             # Matrix OHR locations:
-            # [AB_1, AB_2, BC_1, BC_2, CD_1, CD_2, AD_1, AD_2]
-            # [AB_3, AB_4, BC_3, BC_4, CD_3, CD_4, AD_3, AD_4]
+            # [AB_1, AB_2, AD_1, AD_2, CD_1, CD_2, BC_1, BC_2]
+            # [AB_3, AB_4, AD_3, AD_4, CD_3, CD_4, BC_3, BC_4]
             return v_raw.reshape(2, 8)
 
     # Context Manager
