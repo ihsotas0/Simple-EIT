@@ -1,6 +1,6 @@
 import threading
 from functools import partial
-from time import sleep  # TESTING
+from time import sleep
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,87 +8,57 @@ from matplotlib import colormaps
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Wedge
 
-#from classifier import Classifier
+from classifier import Classifier
 from simple_eit import SimpleEIT
 
 print("Running full Simple EIT...")
 
-# ========= USER INPUT =========
-
-# model_list = Classifier.list_models()
-# object_list = Classifier.list_objects()
-
-# # Get classifier
-# print(f"List of classifier models: {model_list}")
-
-# cf_in = input("Choose classifier model by name: ")
-
-# if cf_in not in model_list:
-#     raise RuntimeError("Model does not exist!")
-
-# # Get object
-# print(f"List of objects: {object_list}")
-
-# obj_in = input("Choose object by name: ")
-
-# if obj_in not in object_list:
-#     raise RuntimeError("Object does not exist!")
-
-
-"""
-(a) Run auto-calibration script (~30 minutes, guided)
-(c) Change colormap
-(m) Change classifier model
-(o) Change object
-"""
-
-"""
-() GB
-() KNN
-() LDA
-() Log Reg
-() MLP
-() RF
-() SVM
-() XGB
-"""
-
-
-# Get cmap
-print(f"Recommended: ['binary']")
-
-colors = input("Choose cmap: ")
-
-if colors not in colormaps:
-    raise RuntimeError("Colormap does not exist!")
-
 # Create the colormap for binary colors (white to black)
-global_cmap = getattr(plt.cm, colors)
-
+global_cmap = plt.cm.binary
 
 # ========= EIT DATA THREAD =========
 
-app = SimpleEIT(Classifier(model = cf_in, object = obj_in))  # NOT TESTING
+clf = Classifier()
+
+# Default object and model
+clf.select_object("vertical_eraser")
+clf.select_model("logreg")
+
+app = SimpleEIT(clf)
 
 # Shared data + synchronization
 latest_data = np.zeros((2, 8))
 data_lock = threading.Lock()
+model_lock = threading.Lock()
 stop_event = threading.Event()
+pause_event = threading.Event()
+
+state_text = None  # matplotlib text overlay
+
+key_actions = {
+    "f": lambda: clf.select_object("finger_jonah"),
+    "v": lambda: clf.select_object("vertical_eraser"),
+    "h": lambda: clf.select_object("horz_eraser"),
+    "g": lambda: clf.select_model("gb"),
+    "k": lambda: clf.select_model("knn"),
+    "d": lambda: clf.select_model("lda"),
+    "l": lambda: clf.select_model("logreg"),
+    "m": lambda: clf.select_model("mlp"),
+    "r": lambda: clf.select_model("rf"),
+    "s": lambda: clf.select_model("svm"),
+    "x": lambda: clf.select_model("xgb"),
+}
 
 
 def data_loop():
     """Data acquisition thread."""
     global latest_data
     while not stop_event.is_set():
-        # app.run() # NOT TESTING
-        rand_vec = np.random.random((2, 8))**8  # TESTING
-        # data = cf.mse_lut(rand_vec, obj="testing")  # TESTING
-        data = rand_vec / rand_vec.sum()  # TESTING
-        # data = np.array(
-        #     [[0.24, 0.2, 0.05, 0, 0, 0, 0, 0], [0.1, 0.4, 0.01, 0, 0, 0, 0, 0]]
-        # )  # TESTING
-        sleep(0.5)  # TESTING
+        # Pause while user is interacting
+        while pause_event.is_set() and not stop_event.is_set():
+            sleep(0.05)
         with data_lock:
+            data = app.run()
             # [AB_1, AB_2, AD_1, AD_2, CD_1, CD_2, BC_1, BC_2]
             # [AB_3, AB_4, AD_3, AD_4, CD_3, CD_4, BC_3, BC_4]
             latest_data = data.copy()
@@ -100,7 +70,15 @@ thread.start()
 
 # ========= DISPLAY CODE =========
 
-fig, ax = plt.subplots(figsize=(6, 6))
+fig = plt.figure(figsize=(10, 8))
+fig.subplots_adjust(wspace=0.25, left=0.05, right=0.98, top=0.90, bottom=0.05)
+gs = fig.add_gridspec(1, 2, width_ratios=[2, 1])
+
+ax_left = fig.add_subplot(gs[0, 0])
+ax_right = fig.add_subplot(gs[0, 1])
+
+ax_left.set_title("Simple EIT Display", pad=16, fontsize=13, fontweight="bold")
+ax_right.set_title("Controls and Status", pad=16, fontsize=13, fontweight="bold")
 
 # Add labels A, B, C, D around the plot
 label_radius = 1.1
@@ -112,7 +90,7 @@ label_positions = [
     (-label_radius, 0),
 ]
 for label, (x, y) in zip(labels, label_positions):
-    ax.text(x, y, label, ha="center", va="center", fontsize=12, fontweight="bold")
+    ax_left.text(x, y, label, ha="center", va="center", fontsize=12, fontweight="bold")
 
 # Number of slices and rings
 num_slices = 8
@@ -128,7 +106,47 @@ r_inner = r_outer / np.sqrt(2)
 # Initialize patches and text objects
 global_wedges = [None] * (num_slices * num_rings)
 global_texts = [None] * (num_slices * num_rings)
+status_text = None
 
+ax_right.set_xlim(0, 1)
+ax_right.set_ylim(0, 1)
+ax_right.axis("off")
+
+# STATUS (top box)
+status_text = ax_right.text(
+    0.5,
+    0.88,
+    "",
+    ha="center",
+    va="center",
+    fontsize=12,
+    fontweight="bold",
+    bbox=dict(boxstyle="round,pad=0.4", facecolor="whitesmoke", edgecolor="gray")
+)
+
+# CONTROLS (centered and padded)
+ax_right.text(
+    0.5,
+    0.45,
+"""(a) Auto-calibrate object
+
+Objects:
+(f) Finger (Jonah)
+(v) Vertical Eraser
+(h) Horizontal Eraser
+
+Models:
+(g) GB    (k) KNN   (d) LDA
+(l) LogReg (m) MLP  (r) RF
+(s) SVM   (x) XGB
+
+(e) Exit""",
+    ha="center",
+    va="center",
+    fontsize=11,
+    family="monospace",
+    linespacing=1.4,
+)
 
 def update(frame):
     """Function to update the wedges and text for animation."""
@@ -149,9 +167,14 @@ def update(frame):
                 index, i, ring, start_angle, value, color_intensity, text_color
             )
 
+    status_text.set_text(
+        f"object = {clf.object_name}\nmodel = {clf.model_name}"
+    )
+    
     # Set plot settings
-    ax.axis("equal")
-    ax.axis("off")
+    ax_left.axis("equal")
+    ax_left.axis("off")
+    ax_right.axis("off")
 
     return []
 
@@ -187,7 +210,7 @@ def create_wedge(index, slice_index, ring, start_angle, radius, color_intensity)
         facecolor=global_cmap(color_intensity),
         lw=0,
     )
-    ax.add_patch(wedge)
+    ax_left.add_patch(wedge)
     global_wedges[index] = wedge
 
 
@@ -203,7 +226,7 @@ def create_text(index, slice_index, ring, start_angle, value, text_color):
     x_text = text_radius * np.cos(text_angle)
     y_text = text_radius * np.sin(text_angle)
 
-    text_obj = ax.text(
+    text_obj = ax_left.text(
         x_text,
         y_text,
         f"{value:.2f}",
@@ -225,16 +248,28 @@ def update_existing_text(index, value, text_color):
 
 
 def on_key(event):
-    """Key press handler (ends thread)."""
-    print("Key pressed, exiting...")
+    global pause_event
 
-    # Signal thread to stop
-    stop_event.set()
-    thread.join(timeout=1)
+    key = event.key
+    if not key:
+        return
 
-    # app.close() # NOT TESTING
-    plt.close(fig)
-    print("Done!")
+    # EXIT
+    if key == "e":
+        print("Exiting...")
+        stop_event.set()
+        plt.close(fig)
+        return
+
+    # If valid action key → pause loop during update
+    if key in key_actions:
+        pause_event.set()
+
+        try:
+            print(f"Key {key} pressed -> executing action")
+            key_actions[key]()
+        finally:
+            pause_event.clear()
 
 
 # Bind key press
@@ -253,3 +288,4 @@ ani = FuncAnimation(
 
 # Display the plot
 plt.show()
+plt.tight_layout()

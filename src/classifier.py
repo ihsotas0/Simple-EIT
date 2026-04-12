@@ -22,7 +22,7 @@ from xgboost import XGBClassifier
 
 class Classifier:
     """
-    Handles classifier models including caching, training, object and model
+    Handles classifier models. Includes caching, training, object and model
     selection, and output formatting.
 
     Input (v):
@@ -39,14 +39,21 @@ class Classifier:
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
+        # Fucked up evil shit
+        self.model_lock = threading.Lock()
+
         # Paths to collected CSV data
         self.dataset_map = {
+            "vertical_eraser": "../data/archive/vertical_eraser_no_salt_data_formatted.csv",
+            "vertical_eraser": "../data/archive/vertical_eraser_no_salt_data_formatted.csv",
+            "vertical_eraser": "../data/archive/vertical_eraser_no_salt_data_formatted.csv",
+            "vertical_eraser": "../data/archive/vertical_eraser_no_salt_data_formatted.csv",
             "vertical_eraser": "../data/archive/vertical_eraser_no_salt_data_formatted.csv",
         }
 
         # Model factory: uses lambdas to defer instantiation
         self.model_factory = {
-            "gb": lambda: GradientBoostingClassifier(),
+            "gb": lambda: GradientBoostingClassifier(n_estimators=200),
             "knn": lambda: KNeighborsClassifier(n_neighbors=6),
             "lda": lambda: LinearDiscriminantAnalysis(),
             "logreg": lambda: LogisticRegression(max_iter=2500),
@@ -60,7 +67,7 @@ class Classifier:
             ),
             "svm": lambda: SVC(kernel="rbf", probability=True),
             "xgb": lambda: XGBClassifier(
-                n_estimators=300, learning_rate=0.05, max_depth=4, verbosity=0
+                n_estimators=200, learning_rate=0.05, max_depth=4, verbosity=0
             ),
         }
 
@@ -69,7 +76,7 @@ class Classifier:
         self.object_name = None
 
         self.accuracy = None
-        self.training_time = None
+        self.training_timestamp = None
         self.loss_curve = None
 
         self.model = None
@@ -150,45 +157,47 @@ class Classifier:
             payload = joblib.load(cache_path)
             self.model = payload["model"]
             self.accuracy = payload["metadata"]["accuracy"]
-            self.training_time = payload["metadata"]["timestamp"]
+            self.loss_curve = payload["metadata"]["loss_curve"]
+            self.training_timestamp = payload["metadata"]["timestamp"]
             return
 
         print(f"Training {self.model_name}...")
-        self.model.fit(self.data["X_train"], self.data["y_train"])
+        self.model.fit(self.data["x_train"], self.data["y_train"])
 
         if hasattr(self.model, "loss_curve_"):
             self.loss_curve = self.model.loss_curve_
 
-        accuracy = self.evaluate()
-        self._save_cache(cache_path, accuracy)
+        self.accuracy = self._evaluate()
+        print(f"Model accuracy: {self.accuracy}.")
 
-    def _save_cache(self, path: Path, accuracy: float):
+        self.training_timestamp = datetime.now().isoformat()
+        self._save_cache(cache_path)
+
+    def _save_cache(self, path: Path):
         payload = {
             "model": self.model,
-            "metadata": {"accuracy": accuracy, "timestamp": datetime.now().isoformat()},
+            "metadata": {
+                "accuracy": self.accuracy,
+                "loss_curve": self.loss_curve,
+                "timestamp": self.training_timestamp,
+            },
         }
         joblib.dump(payload, path)
-        print(f"Model saved at {path}. Accuracy: {accuracy:.4f}")
+        print(f"Model saved at {path}.")
 
     # ========= Inference & Formatting =========
 
     def predict(self, feature_vector: list) -> np.ndarray:
-        """Predicts and returns formatted 2x8 probability matrix."""
+        """Predicts and returns formatted probability matrix."""
         v = np.array(feature_vector).reshape(1, -1)
         v_scaled = self.scaler.transform(v)
 
-        if hasattr(self.model, "predict_proba"):
-            probs = self.model.predict_proba(v_scaled)[0]
-        else:
-            # Fallback for models without predict_proba (e.g. basic Linear SVC)
-            idx = self.model.predict(v_scaled)[0]
-            probs = np.zeros(len(self.encoder.classes_))
-            probs[idx] = 1.0
+        probs = self.model.predict_proba(v_scaled)[0]
 
         return self._format_as_matrix(probs)
 
     def _format_as_matrix(self, probs: np.ndarray) -> np.ndarray:
-        """Maps probabilities to a specific 2x8 sensor grid layout."""
+        """Maps probabilities to layout for Matplotlib circular display code."""
         labels = self.encoder.classes_
         prob_map = dict(zip(labels, probs))
 
@@ -198,21 +207,20 @@ class Classifier:
             ["AB_3", "AB_4", "AD_3", "AD_4", "CD_3", "CD_4", "BC_3", "BC_4"],
         ]
 
-        try:
-            return np.array(
-                [[prob_map.get(lbl, 0.0) for lbl in row] for row in grid_layout]
-            )
-        except Exception as e:
-            print(
-                f"Warning: Formatting failed. Returning raw probabilities. Error: {e}"
-            )
-            return probs
+        return np.array(
+            [[prob_map.get(lbl, 0.0) for lbl in row] for row in grid_layout]
+        )
 
-    def evaluate(self) -> float:
+    def _evaluate(self) -> float:
         """Returns accuracy score on the test set."""
-        preds = self.model.predict(self.data["X_test"])
+        preds = self.model.predict(self.data["x_test"])
         return accuracy_score(self.data["y_test"], preds)
 
+
+    # Radius of plastic CURC test
+    # 0.5 cm, 1 cm, 1.5 cm, 2 cm, 2.5 cm
+    # PET G filament
+    
 
 
 

@@ -3,7 +3,7 @@ import numpy as np
 from scipy.stats import norm
 import pandas as pd
 
-df = pd.read_csv("vertical_eraser_no_salt_data_formatted.csv")
+df = pd.read_csv("../data/archive/vertical_eraser_no_salt_data_formatted.csv")
 
 locations = [
     "AB_1",
