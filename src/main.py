@@ -8,35 +8,51 @@ from matplotlib import colormaps
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Wedge
 
-import classifiers as cf
+#from classifier import Classifier
 from simple_eit import SimpleEIT
 
 print("Running full Simple EIT...")
 
 # ========= USER INPUT =========
 
-# Get classifier
-# List only callable, non-dunder functions
-functions = [
-    name
-    for name in dir(cf)
-    if callable(getattr(cf, name)) and not name.startswith("__")
-]
+# model_list = Classifier.list_models()
+# object_list = Classifier.list_objects()
 
-print(f"List of classifiers: {functions}")
+# # Get classifier
+# print(f"List of classifier models: {model_list}")
 
-cf_in = input("Choose classifier by function name: ")
+# cf_in = input("Choose classifier model by name: ")
 
-if cf_in not in functions:
-    raise RuntimeError("Classifier does not exist!")
+# if cf_in not in model_list:
+#     raise RuntimeError("Model does not exist!")
 
-# Get object
-print(f"List of objects: {cf.OBJECTS}")
+# # Get object
+# print(f"List of objects: {object_list}")
 
-obj_in = input("Choose object by name: ")
+# obj_in = input("Choose object by name: ")
 
-if obj_in not in cf.OBJECTS:
-    raise RuntimeError("Object does not exist!")
+# if obj_in not in object_list:
+#     raise RuntimeError("Object does not exist!")
+
+
+"""
+(a) Run auto-calibration script (~30 minutes, guided)
+(c) Change colormap
+(m) Change classifier model
+(o) Change object
+"""
+
+"""
+() GB
+() KNN
+() LDA
+() Log Reg
+() MLP
+() RF
+() SVM
+() XGB
+"""
+
 
 # Get cmap
 print(f"Recommended: ['binary']")
@@ -52,8 +68,7 @@ global_cmap = getattr(plt.cm, colors)
 
 # ========= EIT DATA THREAD =========
 
-# Some functional magic (even better)
-# app = SimpleEIT(partial(getattr(cf, cf_in), obj=obj_in))  # NOT TESTING
+app = SimpleEIT(Classifier(model = cf_in, object = obj_in))  # NOT TESTING
 
 # Shared data + synchronization
 latest_data = np.zeros((2, 8))
@@ -61,15 +76,17 @@ data_lock = threading.Lock()
 stop_event = threading.Event()
 
 
-# Data acquisition thread
 def data_loop():
+    """Data acquisition thread."""
     global latest_data
     while not stop_event.is_set():
         # app.run() # NOT TESTING
-        # rand_vec = np.random.random((2, 8))**8  # TESTING
+        rand_vec = np.random.random((2, 8))**8  # TESTING
         # data = cf.mse_lut(rand_vec, obj="testing")  # TESTING
-        # data = rand_vec / rand_vec.sum()  # TESTING
-        data = np.array([[0.24, 0.2, 0.05, 0, 0, 0, 0, 0], [0.1, 0.4, 0.01, 0, 0, 0, 0, 0]]) # TESTING
+        data = rand_vec / rand_vec.sum()  # TESTING
+        # data = np.array(
+        #     [[0.24, 0.2, 0.05, 0, 0, 0, 0, 0], [0.1, 0.4, 0.01, 0, 0, 0, 0, 0]]
+        # )  # TESTING
         sleep(0.5)  # TESTING
         with data_lock:
             # [AB_1, AB_2, AD_1, AD_2, CD_1, CD_2, BC_1, BC_2]
@@ -113,8 +130,8 @@ global_wedges = [None] * (num_slices * num_rings)
 global_texts = [None] * (num_slices * num_rings)
 
 
-# Function to update the wedges and text for animation
 def update(frame):
+    """Function to update the wedges and text for animation."""
     with data_lock:
         data = latest_data.copy()
 
@@ -208,7 +225,7 @@ def update_existing_text(index, value, text_color):
 
 
 def on_key(event):
-    """Key press handler (ends thread)"""
+    """Key press handler (ends thread)."""
     print("Key pressed, exiting...")
 
     # Signal thread to stop

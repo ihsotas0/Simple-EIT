@@ -8,10 +8,12 @@ from device_manager import DeviceManager
 
 
 class SimpleEIT:
+    """Wrapper for Simple EIT instrument control."""
 
-    def __init__(self, model=lambda v: np.array([0, 0, 0, 0]), freq=10e3):
+    def __init__(self, classifier, freq=10e3):
+        """Pick initial classifier and frequency."""
 
-        # For frequency testing
+        # For frequency testing (classifier models all designed for 10 kHz)
         self.freq = freq
 
         # GPIO controllers for multiplexers
@@ -31,10 +33,11 @@ class SimpleEIT:
         self.dm.set_scope()
         self.dm.set_wavegen(freq=self.freq)
 
-        # Classification model
-        self.model = model
+        # Classifier, set to specific model and object
+        self.classifier = classifier
 
     def get_voltages(self):
+        """Get voltages from all 6 configurations with MUXs."""
         v_return = np.zeros(6)
 
         # (selection for MUX 1, selection for MUX 2, voltage measurement index)
@@ -70,6 +73,7 @@ class SimpleEIT:
         return v_return
 
     def run(self, testing=False, freq=10e3):
+        """Get voltages, convert to probability distribution."""
 
         # For frequency testing
         if freq is not self.freq:
@@ -83,7 +87,7 @@ class SimpleEIT:
             return v
         else:
             # Use classifier
-            v_raw = self.model(v)
+            v_raw = self.classifier.model(v)
 
             # Matrix OHR locations:
             # [AB_1, AB_2, AD_1, AD_2, CD_1, CD_2, BC_1, BC_2]
@@ -103,6 +107,7 @@ class SimpleEIT:
     # Helper functions
 
     def _set_mux_state(self, mux, state):
+        """Set MUX selection lines using GPIO."""
         # mux = (A0, A1)
         match state:
             case 1:
