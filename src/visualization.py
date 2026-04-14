@@ -83,107 +83,112 @@ from sklearn.metrics import r2_score
 # plt.tight_layout()
 # plt.show()
 
+# df_a = pd.read_csv("../data/curc_a_data.csv")
+# df_b = pd.read_csv("../data/curc_b_data.csv")
+# df_c = pd.read_csv("../data/curc_c_data.csv")
+# df_d = pd.read_csv("../data/curc_d_data.csv")
+# df_e = pd.read_csv("../data/curc_e_data.csv")
+# df_i = pd.read_csv("../data/instrument_data.csv")
+# df_is = pd.read_csv("../data/instrument_salt_data.csv")
 
-df_a = pd.read_csv("../data/curc_a_data.csv")
-df_b = pd.read_csv("../data/curc_b_data.csv")
-df_c = pd.read_csv("../data/curc_c_data.csv")
-df_d = pd.read_csv("../data/curc_d_data.csv")
-df_e = pd.read_csv("../data/curc_e_data.csv")
-df_i = pd.read_csv("../data/instrument_data.csv")
-df_is = pd.read_csv("../data/instrument_salt_data.csv")
+# # Load your CSV
+# df = df_is
 
-# Load your CSV
-df = df_i
+# # For df_is, not df_i
+# df = df[~((df['V_BC'] > 7.7) | (df['V_AD'] > 7.9) | (df['V_AC'] > 9.2))].copy()
 
-df = df.iloc[4000:]
-
-# # Define voltages and frequencies
-# voltages = ["V_AD", "V_AB", "V_BC", "V_CD", "V_AC", "V_BD"]
-# frequencies = [1000, 5000, 10000, 20000]  # in Hz
-
-# # Set up the figure: 6 rows (voltages) x 4 columns (frequencies)
-# fig, axes = plt.subplots(nrows=6, ncols=4, figsize=(20, 18))
-# fig.subplots_adjust(hspace=0.5, wspace=0.3)
-
-# for i, voltage in enumerate(voltages):
-#     for j, freq in enumerate(frequencies):
-#         ax = axes[i, j]
-#         # Select data for this voltage and frequency
-#         data = df[df["Frequency (Hz)"] == freq][voltage]
-
-#         # Plot histogram
-#         counts, bins, patches = ax.hist(
-#             data, bins=20, density=True, color="skyblue", edgecolor="black", alpha=0.7
-#         )
-
-#         # Fit normal distribution
-#         mu, std = norm.fit(data)
-#         x = np.linspace(bins[0], bins[-1], 100)
-#         p = norm.pdf(x, mu, std)
-
-#         # Overlay normal curve
-#         ax.plot(x, p, "r", linewidth=2)
-
-#         if i == 0:
-#             ax.set_title(f"{freq/1000:.0f} kHz", fontsize=9)
-
-#         if j == 0:
-#             ax.set_ylabel(f"{voltage}", fontsize=9)
-
-# plt.suptitle("Instrument Calibration and Verification Data", fontsize=20)
-# plt.show()
-
-# # Get unique frequencies and sort them
 # frequencies = sorted(df['Frequency (Hz)'].unique())
-
-# # List of voltage columns
 # voltages = ['V_AD', 'V_AB', 'V_BC', 'V_CD', 'V_AC', 'V_BD']
-
-# # Prepare figure with subplots for each voltage
-# fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+# fig, axes = plt.subplots(1, 6, figsize=(18, 4))
 # axes = axes.flatten()
 
 # for i, voltage in enumerate(voltages):
-#     data_per_freq = [df[df['Frequency (Hz)'] == f][voltage].values for f in frequencies]
-    
-#     axes[i].violinplot(data_per_freq, showmeans=True, showmedians=True)
 #     axes[i].set_title(voltage)
 #     axes[i].set_xticks([1, 2, 3, 4])
 #     axes[i].set_xticklabels([f"{int(f/1000)} kHz" for f in frequencies])
-#     axes[i].set_ylabel("Voltage (V)")
+#     if i == 0 or i == 3:
+#         axes[i].set_ylabel("Voltage (V)")
 
+#     axes[i].grid(True, which='both', axis='both', alpha=0.3)
+    
+#     for j, f in enumerate(frequencies):
+#         values = df[df['Frequency (Hz)'] == f][voltage].values
+#         lower, upper = np.percentile(values, [1, 99])
+#         clipped = np.clip(values, lower, upper)
+
+#         unique_vals = np.unique(clipped)
+        
+#         if len(unique_vals) >= 10:
+#             # Bare violin plot: no color, no mean/median
+#             vp = axes[i].violinplot([clipped], positions=[j+1], showextrema=False, showmeans=True)
+#             # Remove color: make transparent edges
+#             for patch in vp['bodies']:
+#                 patch.set_facecolor('none')
+#                 patch.set_edgecolor('black')
+#                 patch.set_alpha(1.0)
+
+#             vp['cmeans'].set_color('black')
+#         else:
+#             # Few points → scatter with width proportional to counts
+#             unique_vals, counts = np.unique(clipped, return_counts=True)
+#             max_count = counts.max()
+#             for val, count in zip(unique_vals, counts):
+#                 width = 0.05 + 0.25 * (count / max_count)  # min width 0.05, max width 0.3
+#                 x_jitter = np.random.uniform(-width, width, size=count) + (j+1)
+#                 axes[i].scatter(x_jitter, [val]*count, alpha=0.7, color='k')
+
+# plt.suptitle("Instrument Voltage Distributions for Different Configurations and Frequencies (14% Saline, n=1000 per Distribution)")
 # plt.tight_layout()
 # plt.show()
 
-# Define colors for each frequency
-colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']  # blue, orange, green, red
+# # Load your CSV
+# df = df_e
 
-fig, axes = plt.subplots(2, 3, figsize=(18, 10))
-axes = axes.flatten()
+# #df = df[df['Label'].str.startswith('AB')].copy()
 
-frequencies = sorted(df['Frequency (Hz)'].unique())
-voltages = ['V_AD', 'V_AB', 'V_BC', 'V_CD', 'V_AC', 'V_BD']
+# labels = sorted(df['Label'].unique())
+# voltages = ['V_AD', 'V_AB', 'V_BC', 'V_CD', 'V_AC', 'V_BD']
+# fig, axes = plt.subplots(2, 3, figsize=(18, 8))
+# axes = axes.flatten()
 
-for i, voltage in enumerate(voltages):
-    data_per_freq = []
-    for f in frequencies:
-        values = df[df['Frequency (Hz)'] == f][voltage].values
-        lower, upper = np.percentile(values, [1, 99])
-        clipped = np.clip(values, lower, upper)
-        data_per_freq.append(clipped)
+# for i, voltage in enumerate(voltages):
+#     axes[i].set_title(voltage)
+#     axes[i].set_xticks(np.linspace(1,len(labels)+1,len(labels)))
+#     if i >= 3:
+#         axes[i].set_xticklabels([f"{f}" for f in labels], rotation=45, ha='right')
+#     else:
+#         axes[i].set_xticklabels([])
+#     if i == 0 or i == 3:
+#         axes[i].set_ylabel("Voltage (V)")
+
+#     axes[i].grid(True, which='both', axis='both', alpha=0.3)
     
-    vp = axes[i].violinplot(data_per_freq, showmeans=True, showmedians=True)
-    
-    # Color each violin
-    for patch, color in zip(vp['bodies'], colors):
-        patch.set_facecolor(color)
-        patch.set_edgecolor('black')
-        patch.set_alpha(0.7)
-    
-    axes[i].set_title(voltage)
-    axes[i].set_xticks([1, 2, 3, 4])
-    axes[i].set_xticklabels([f"{int(f/1000)} kHz" for f in frequencies])
-    axes[i].set_ylabel("Voltage (V)")
+#     for j, f in enumerate(labels):
+#         values = df[df['Label'] == f][voltage].values
+#         lower, upper = np.percentile(values, [1, 99])
+#         clipped = np.clip(values, lower, upper)
 
-plt.tight_layout()
-plt.show()
+#         unique_vals = np.unique(clipped)
+        
+#         if len(unique_vals) >= 10:
+#             # Bare violin plot: no color, no mean/median
+#             vp = axes[i].violinplot([clipped], positions=[j+1], showextrema=False, showmeans=True)
+#             # Remove color: make transparent edges
+#             for patch in vp['bodies']:
+#                 patch.set_facecolor('none')
+#                 patch.set_edgecolor('black')
+#                 patch.set_alpha(1.0)
+
+#             vp['cmeans'].set_color('black')
+#         else:
+#             # Few points → scatter with width proportional to counts
+#             unique_vals, counts = np.unique(clipped, return_counts=True)
+#             max_count = counts.max()
+#             for val, count in zip(unique_vals, counts):
+#                 width = 0.05 + 0.25 * (count / max_count)  # min width 0.05, max width 0.3
+#                 x_jitter = np.random.uniform(-width, width, size=count) + (j+1)
+#                 axes[i].scatter(x_jitter, [val]*count, alpha=0.7, color='k')
+
+# plt.suptitle("Instrument Voltage Distributions for Different Configurations and Sectors (object=curc_e, n=200 per Distribution)")
+# plt.tight_layout()
+# plt.show()
