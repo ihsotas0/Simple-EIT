@@ -39,21 +39,18 @@ class Classifier:
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
-        # Fucked up evil shit
-        self.model_lock = threading.Lock()
-
         # Paths to collected CSV data
         self.dataset_map = {
-            "vertical_eraser": "../data/archive/vertical_eraser_no_salt_data_formatted.csv",
-            "vertical_eraser": "../data/archive/vertical_eraser_no_salt_data_formatted.csv",
-            "vertical_eraser": "../data/archive/vertical_eraser_no_salt_data_formatted.csv",
-            "vertical_eraser": "../data/archive/vertical_eraser_no_salt_data_formatted.csv",
-            "vertical_eraser": "../data/archive/vertical_eraser_no_salt_data_formatted.csv",
+            "curc_a": "../data/curc_a_data.csv",
+            "curc_b": "../data/curc_b_data.csv",
+            "curc_c": "../data/curc_c_data.csv",
+            "curc_d": "../data/curc_d_data.csv",
+            "curc_e": "../data/curc_e_data.csv",
         }
 
         # Model factory: uses lambdas to defer instantiation
         self.model_factory = {
-            "gb": lambda: GradientBoostingClassifier(n_estimators=200),
+            "gb": lambda: GradientBoostingClassifier(),
             "knn": lambda: KNeighborsClassifier(n_neighbors=6),
             "lda": lambda: LinearDiscriminantAnalysis(),
             "logreg": lambda: LogisticRegression(max_iter=2500),
@@ -112,7 +109,7 @@ class Classifier:
         self.dataset_hash = self._hash_dataset(df)
 
         # Get labels and voltages
-        x = df.drop("Label", axis=1).values
+        x = df.drop(["Timestamp","Label"], axis=1).values
         y = df["Label"].values
 
         # Preprocessing
@@ -147,8 +144,8 @@ class Classifier:
 
     def _train_or_load(self):
         """Check for existing cache, otherwise train and save."""
-        if not self.model or not self.data:
-            raise RuntimeError("Must select object and model before training.")
+        #if not self.model or not self.data:
+        #    raise RuntimeError("Must select object and model before training.")
 
         cache_path = self._get_cache_path()
 
@@ -166,9 +163,11 @@ class Classifier:
 
         if hasattr(self.model, "loss_curve_"):
             self.loss_curve = self.model.loss_curve_
+        else:
+            self.loss_curve = "No curve"
 
         self.accuracy = self._evaluate()
-        print(f"Model accuracy: {self.accuracy}.")
+        print(f"Model accuracy ({self.object_name} : {self.model_name}): {self.accuracy}.")
 
         self.training_timestamp = datetime.now().isoformat()
         self._save_cache(cache_path)
@@ -220,7 +219,12 @@ class Classifier:
     # Radius of plastic CURC test
     # 0.5 cm, 1 cm, 1.5 cm, 2 cm, 2.5 cm
     # PET G filament
-    
 
+clf = Classifier()
+
+for model in clf.model_factory.keys():
+    for obj in clf.dataset_map.keys():
+        clf.select_object(obj)
+        clf.select_model(model)
 
 

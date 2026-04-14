@@ -21,8 +21,8 @@ global_cmap = plt.cm.binary
 clf = Classifier()
 
 # Default object and model
-clf.select_object("vertical_eraser")
-clf.select_model("logreg")
+clf.select_object("curc_a")
+clf.select_model("knn")
 
 app = SimpleEIT(clf)
 
