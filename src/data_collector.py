@@ -49,8 +49,6 @@ def quadrant_object_data(object_name):
     # Replace "instrument" with the object_name in the file name
     csv_file_path = os.path.join("..", "data", f"{object_name}_data.csv")
 
-    previous_label = ""
-
     locations = [
         "AB_1",
         "AB_2",
@@ -90,7 +88,7 @@ def quadrant_object_data(object_name):
             )
 
         for location in locations:
-            print("fMove object to: {location}")
+            print(f"Move object to: {location}")
             _ = input("Press enter when ready...")
 
             # Run app 200 times and append the result to the CSV file
@@ -101,7 +99,6 @@ def quadrant_object_data(object_name):
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                 writer.writerow([timestamp, location] + list(v))
-                previous_label = label
 
             print("Done, next location")
 

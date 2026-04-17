@@ -2,10 +2,11 @@ import csv
 import os
 
 import numpy as np
-#from gpiozero import LED
-from time import sleep # TESTING
 
-#from device_manager import DeviceManager
+# from gpiozero import LED
+from time import sleep  # TESTING
+
+# from device_manager import DeviceManager
 
 
 class SimpleEIT:
@@ -74,13 +75,13 @@ class SimpleEIT:
         sleep(1)
         return np.random.rand(6)
 
-#        return v_return
+    #        return v_return
 
     def run(self, testing=False, freq=10e3):
         """Get voltages, convert to probability distribution."""
 
         # # For frequency testing
-        # if freq is not self.freq:
+        # if freq != self.freq:
         #     self.dm.set_wavegen(freq=freq)
 
         # Get the measured voltages
@@ -105,7 +106,8 @@ class SimpleEIT:
         self.close()
 
     def close(self):
-        self.dm.close()
+        if hasattr(self, "dm") and self.dm is not None:  # Safety check
+            self.dm.close()
 
     # Helper functions
 

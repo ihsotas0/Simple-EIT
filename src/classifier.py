@@ -8,6 +8,8 @@ import joblib
 import numpy as np
 import pandas as pd
 
+import matplotlib.pyplot as plt
+
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -19,6 +21,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
+
 
 class Classifier:
     """
@@ -109,7 +112,7 @@ class Classifier:
         self.dataset_hash = self._hash_dataset(df)
 
         # Get labels and voltages
-        x = df.drop(["Timestamp","Label"], axis=1).values
+        x = df.drop(["Timestamp", "Label"], axis=1).values
         y = df["Label"].values
 
         # Preprocessing
@@ -144,7 +147,7 @@ class Classifier:
 
     def _train_or_load(self):
         """Check for existing cache, otherwise train and save."""
-        #if not self.model or not self.data:
+        # if not self.model or not self.data:
         #    raise RuntimeError("Must select object and model before training.")
 
         cache_path = self._get_cache_path()
@@ -167,7 +170,9 @@ class Classifier:
             self.loss_curve = "No curve"
 
         self.accuracy = self._evaluate()
-        print(f"Model accuracy ({self.object_name} : {self.model_name}): {self.accuracy}.")
+        print(
+            f"Model accuracy ({self.object_name} : {self.model_name}): {self.accuracy}."
+        )
 
         self.training_timestamp = datetime.now().isoformat()
         self._save_cache(cache_path)
@@ -215,16 +220,31 @@ class Classifier:
         preds = self.model.predict(self.data["x_test"])
         return accuracy_score(self.data["y_test"], preds)
 
-
     # Radius of plastic CURC test
     # 0.5 cm, 1 cm, 1.5 cm, 2 cm, 2.5 cm
     # PET G filament
 
+
 clf = Classifier()
+
+loss_curves = {}
 
 for model in clf.model_factory.keys():
     for obj in clf.dataset_map.keys():
         clf.select_object(obj)
         clf.select_model(model)
 
+        loss_curves.update({str(obj + " " + model): clf.loss_curve})
 
+fig, ax = plt.subplots()
+
+for key, value in loss_curves.items():
+    if value != "No curve":
+        ax.semilogx(value, label=key)
+
+ax.set_title("MLP Loss Curve for Each Object")
+ax.set_xlabel("Epochs")
+ax.set_ylabel("Loss [arb. unit]")
+ax.grid(alpha=0.3)
+ax.legend()
+plt.show()
