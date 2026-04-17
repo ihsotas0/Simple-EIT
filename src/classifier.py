@@ -1,8 +1,6 @@
 import hashlib
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
 
 import joblib
 import numpy as np
@@ -85,7 +83,7 @@ class Classifier:
         self.scaler = StandardScaler()
         self.encoder = LabelEncoder()
 
-        self.data: Dict[str, np.ndarray] = {}
+        self.data = {}
 
     # ========= UTILITIES =========
 

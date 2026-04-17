@@ -1,102 +1,93 @@
-import csv
-import os
-
 import numpy as np
+from gpiozero import LED
 
-# from gpiozero import LED
-from time import sleep  # TESTING
+from device_manager import DeviceManager
+from classifier import Classifier
 
-# from device_manager import DeviceManager
 
 
 class SimpleEIT:
     """Wrapper for Simple EIT instrument control."""
 
-    def __init__(self, classifier, freq=10e3):
+    def __init__(self, object=):
         """Pick initial classifier and frequency."""
 
-        # # For frequency testing (classifier models all designed for 10 kHz)
-        # self.freq = freq
+        # GPIO controllers for multiplexers
+        # MUX1 controls S+ and V+ (A0, A1)
+        self.mux1 = (LED(19), LED(26))
 
-        # # GPIO controllers for multiplexers
-        # # MUX1 controls S+ and V+ (A0, A1)
-        # self.mux1 = (LED(19), LED(26))
+        # MUX2 controls S- and V- (A0, A1)
+        self.mux2 = (LED(6), LED(13))
 
-        # # MUX2 controls S- and V- (A0, A1)
-        # self.mux2 = (LED(6), LED(13))
+        # Turns MUXs off before switching and on again
+        self.mux_toggle = (LED(5), LED(16))
 
-        # # Turns MUXs off before switching and on again
-        # self.mux_toggle = (LED(5), LED(16))
+        # Device manager
+        self.dm = DeviceManager()
 
-        # # Device manager
-        # self.dm = DeviceManager()
+        # Classifier to return location of OHR
+        self.classifier = Classifier()
 
-        # # Configure devices
-        # self.dm.set_scope()
-        # self.dm.set_wavegen(freq=self.freq)
+    def set_object():
+        pass
 
-        # Classifier, set to specific model and object
-        self.classifier = classifier
+    def set_model():
+        pass
 
     def get_voltages(self):
         """Get voltages from all 6 configurations with MUXs."""
-        # v_return = np.zeros(6)
+        v_return = np.zeros(6)
 
-        # # (selection for MUX 1, selection for MUX 2, voltage measurement index)
-        # configs = [
-        #     (2, 1, 1),  # V_AD
-        #     (3, 2, 2),  # V_AB
-        #     (1, 3, 3),  # V_BC
-        #     (4, 4, 4),  # V_CD
-        #     (2, 3, 5),  # V_AC: Diag
-        #     (1, 1, 6),  # V_BD: Diag
-        # ]
+        # (selection for MUX 1, selection for MUX 2, voltage measurement index)
+        configs = [
+            (2, 1, 1),  # V_AD
+            (3, 2, 2),  # V_AB
+            (1, 3, 3),  # V_BC
+            (4, 4, 4),  # V_CD
+            (2, 3, 5),  # V_AC: Diag
+            (1, 1, 6),  # V_BD: Diag
+        ]
 
-        # for s1, s2, index in configs:
+        for s1, s2, index in configs:
 
-        #     # Start MUX switch (ground measurement leads)
-        #     self.mux_toggle[0].off()
-        #     self.mux_toggle[1].off()
+            # Start MUX switch (ground measurement leads)
+            self.mux_toggle[0].off()
+            self.mux_toggle[1].off()
 
-        #     # Switch MUX state
-        #     self._set_mux_state(self.mux1, s1)  # Apply state to mux1
-        #     self._set_mux_state(self.mux2, s2)  # Apply state to mux2
+            # Switch MUX state
+            self._set_mux_state(self.mux1, s1)  # Apply state to mux1
+            self._set_mux_state(self.mux2, s2)  # Apply state to mux2
 
-        #     # End MUX switch (turn measurement leads on)
-        #     self.mux_toggle[0].on()
-        #     self.mux_toggle[1].on()
+            # End MUX switch (turn measurement leads on)
+            self.mux_toggle[0].on()
+            self.mux_toggle[1].on()
 
-        #     # Get voltage, assign to index
-        #     # (V_AD, V_AB, V_BC, V_CD, V_AC, V_BD)
-        #     v_return[index - 1] = self.dm.get_voltage()
+            # Get voltage, assign to index
+            # (V_AD, V_AB, V_BC, V_CD, V_AC, V_BD)
+            v_return[index - 1] = self.dm.get_voltage()
 
-        # print(f"Measured voltages: {v_return}")
+        print(f"[SimpleEIT]: Measured voltages: {v_return}")
 
-        sleep(1)
-        return np.random.rand(6)
+        return v_return
 
-    #        return v_return
-
-    def run(self, testing=False, freq=10e3):
+    def run(self, return_raw=False):
         """Get voltages, convert to probability distribution."""
-
-        # # For frequency testing
-        # if freq != self.freq:
-        #     self.dm.set_wavegen(freq=freq)
 
         # Get the measured voltages
         # (V_AD, V_AB, V_BC, V_CD, V_AC, V_BD)
-        v = self.get_voltages()
+        v_raw = self.get_voltages()
 
-        if testing is True:
-            return v
+        if return_raw is True:
+            return v_raw
         else:
             # Use classifier
 
             # Matrix OHR locations:
             # [AB_1, AB_2, AD_1, AD_2, CD_1, CD_2, BC_1, BC_2]
             # [AB_3, AB_4, AD_3, AD_4, CD_3, CD_4, BC_3, BC_4]
-            return self.classifier.predict(v)
+            prediction = self.classifier.predict(v_raw)
+            print(f"[SimpleEIT]: Prediction matrix: {prediction}")
+            return prediction
 
     # Context Manager
     def __enter__(self):
@@ -106,8 +97,7 @@ class SimpleEIT:
         self.close()
 
     def close(self):
-        if hasattr(self, "dm") and self.dm is not None:  # Safety check
-            self.dm.close()
+        self.dm.close()
 
     # Helper functions
 
