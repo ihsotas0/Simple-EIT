@@ -6,8 +6,6 @@ import joblib
 import numpy as np
 import pandas as pd
 
-import matplotlib.pyplot as plt
-
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -19,6 +17,40 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
+
+RANDOM_STATE = 1
+
+# Paths to collected CSV data
+DATASET_MAP = {
+    "curc_a": "../data/curc_a_data.csv",
+    "curc_b": "../data/curc_b_data.csv",
+    "curc_c": "../data/curc_c_data.csv",
+    "curc_d": "../data/curc_d_data.csv",
+    "curc_e": "../data/curc_e_data.csv",
+}
+
+# Model factory: uses lambdas to defer instantiation
+MODEL_FACTORY = {
+    "gb": lambda: GradientBoostingClassifier(),
+    "knn": lambda: KNeighborsClassifier(n_neighbors=6),
+    "lda": lambda: LinearDiscriminantAnalysis(),
+    "logreg": lambda: LogisticRegression(max_iter=2500),
+    "mlp": lambda: MLPClassifier(
+        hidden_layer_sizes=(10, 10),
+        max_iter=2500,
+        random_state=RANDOM_STATE,
+    ),
+    "rf": lambda: RandomForestClassifier(n_estimators=200, random_state=RANDOM_STATE),
+    "svm": lambda: SVC(kernel="rbf", probability=True),
+    "xgb": lambda: XGBClassifier(
+        n_estimators=200, learning_rate=0.05, max_depth=4, verbosity=0
+    ),
+}
+
+CACHE_DIR = "../data/models/"
+
+# Train / total
+TEST_SIZE = 0.2
 
 
 class Classifier:
@@ -33,81 +65,73 @@ class Classifier:
          [AB_3, AB_4, AD_3, AD_4, CD_3, CD_4, BC_3, BC_4]]
     """
 
-    def __init__(self, cache_dir: str = "../data/models/", random_state: int = 1):
+    def __init__(self, object_name, model_name):
 
-        self.random_state = random_state
+        print("[Classifier]: Initializing classifier...")
 
-        self.cache_dir = Path(cache_dir)
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        # Make model cache directory if it doesn't exist
+        cache_dir = Path(CACHE_DIR)
+        cache_dir.mkdir(parents=True, exist_ok=True)
 
-        # Paths to collected CSV data
-        self.dataset_map = {
-            "curc_a": "../data/curc_a_data.csv",
-            "curc_b": "../data/curc_b_data.csv",
-            "curc_c": "../data/curc_c_data.csv",
-            "curc_d": "../data/curc_d_data.csv",
-            "curc_e": "../data/curc_e_data.csv",
-        }
-
-        # Model factory: uses lambdas to defer instantiation
-        self.model_factory = {
-            "gb": lambda: GradientBoostingClassifier(),
-            "knn": lambda: KNeighborsClassifier(n_neighbors=6),
-            "lda": lambda: LinearDiscriminantAnalysis(),
-            "logreg": lambda: LogisticRegression(max_iter=2500),
-            "mlp": lambda: MLPClassifier(
-                hidden_layer_sizes=(10, 10),
-                max_iter=2500,
-                random_state=self.random_state,
-            ),
-            "rf": lambda: RandomForestClassifier(
-                n_estimators=200, random_state=self.random_state
-            ),
-            "svm": lambda: SVC(kernel="rbf", probability=True),
-            "xgb": lambda: XGBClassifier(
-                n_estimators=200, learning_rate=0.05, max_depth=4, verbosity=0
-            ),
-        }
-
-        # Internal state
-        self.model_name = None
-        self.object_name = None
-
-        self.accuracy = None
-        self.training_timestamp = None
-        self.loss_curve = None
+        self.set_object(model_name)
+        self.set_model(model_name)
 
         self.model = None
-        self.dataset_hash = None
 
         self.scaler = StandardScaler()
         self.encoder = LabelEncoder()
 
         self.data = {}
 
+        print(f"[Classifier]: {model_name.upper()} for {object_name.upper()} initialized successfully.")
+
     # ========= UTILITIES =========
 
-    def _hash_dataset(self, df: pd.DataFrame) -> str:
-        """Creates a unique hash based on dataframe content."""
-        return hashlib.md5(
+    def _get_cache_path(self, object_name, model_name, df):
+        """Returns model cache file path for creation and retrival of file."""
+
+        # Creates a unique hash based on dataframe content.
+        dataset_hash = hashlib.md5(
             pd.util.hash_pandas_object(df, index=True).values
         ).hexdigest()
 
-    def _get_cache_path(self) -> Path:
-        filename = f"{self.object_name}_{self.model_name}_{self.dataset_hash}.joblib"
-        return self.cache_dir / filename
+        filename = f"{object_name}_{model_name}_{dataset_hash}.joblib"
+
+        return Path(CACHE_DIR) / filename
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     # ========= LOAD OBJECT DATA =========
 
-    def select_object(self, object_name: str, test_size: float = 0.2):
+    def set_object(self, object_name, test_size = TEST_SIZE):
         """Loads, scales, and splits object voltage dataset."""
-        if object_name not in self.dataset_map:
-            raise KeyError(f"Dataset '{object_name}' not recognized.")
+        if object_name not in DATASET_MAP.keys():
+            raise RuntimeError(f"[Classifier]: Dataset {object_name.upper()} not recognized.")
 
-        # Get CSV and hash
-        self.object_name = object_name
+        # Get CSV
         df = pd.read_csv(self.dataset_map[object_name])
-        self.dataset_hash = self._hash_dataset(df)
+
+        cache_path = _get_cache_path(object_name)
 
         # Get labels and voltages
         x = df.drop(["Timestamp", "Label"], axis=1).values
@@ -119,7 +143,7 @@ class Classifier:
 
         # Split dataset
         x_train, x_test, y_train, y_test = train_test_split(
-            x_scaled, y_encoded, test_size=test_size, random_state=self.random_state
+            x_scaled, y_encoded, test_size=test_size, random_state=RANDOM_STATE
         )
 
         self.data = {
@@ -131,7 +155,7 @@ class Classifier:
 
     # ========= TRAIN MODEL AND CACHE =========
 
-    def select_model(self, model_name: str):
+    def set_model(self, model_name: str):
         """Instantiates the chosen model."""
         if model_name not in self.model_factory:
             raise KeyError(f"Model '{model_name}' not supported.")
@@ -217,32 +241,3 @@ class Classifier:
         """Returns accuracy score on the test set."""
         preds = self.model.predict(self.data["x_test"])
         return accuracy_score(self.data["y_test"], preds)
-
-    # Radius of plastic CURC test
-    # 0.5 cm, 1 cm, 1.5 cm, 2 cm, 2.5 cm
-    # PET G filament
-
-
-clf = Classifier()
-
-loss_curves = {}
-
-for model in clf.model_factory.keys():
-    for obj in clf.dataset_map.keys():
-        clf.select_object(obj)
-        clf.select_model(model)
-
-        loss_curves.update({str(obj + " " + model): clf.loss_curve})
-
-fig, ax = plt.subplots()
-
-for key, value in loss_curves.items():
-    if value != "No curve":
-        ax.semilogx(value, label=key)
-
-ax.set_title("MLP Loss Curve for Each Object")
-ax.set_xlabel("Epochs")
-ax.set_ylabel("Loss [arb. unit]")
-ax.grid(alpha=0.3)
-ax.legend()
-plt.show()

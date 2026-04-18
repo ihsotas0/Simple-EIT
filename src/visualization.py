@@ -5,6 +5,33 @@ from scipy.stats import norm
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 
+from classifier import Classifier
+
+clf = Classifier()
+
+loss_curves = {}
+
+for model in clf.model_factory.keys():
+    for obj in clf.dataset_map.keys():
+        clf.select_object(obj)
+        clf.select_model(model)
+
+        loss_curves.update({str(obj + " " + model): clf.loss_curve})
+
+fig, ax = plt.subplots()
+
+for key, value in loss_curves.items():
+    if value != "No curve":
+        ax.semilogx(value, label=key)
+
+ax.set_title("MLP Loss Curve for Each Object")
+ax.set_xlabel("Epochs")
+ax.set_ylabel("Loss [arb. unit]")
+ax.grid(alpha=0.3)
+ax.legend()
+plt.show()
+
+
 # # Load data
 # df = pd.read_csv("../data/model_performance.csv")
 

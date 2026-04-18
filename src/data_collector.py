@@ -4,11 +4,14 @@ from pathlib import Path
 
 from simple_eit import SimpleEIT
 
+# ========= Constants =========
+
 DATA_DIR = Path("..") / "data"
 FREQUENCIES = (1_000, 5_000, 10_000, 20_000)
 INSTRUMENT_N = 1000
 OBJECT_N = 200
 
+# ========= Helper functions =========
 
 def _write_header_if_empty(file_obj, writer, header):
     if file_obj.tell() == 0:
@@ -18,6 +21,7 @@ def _write_header_if_empty(file_obj, writer, header):
 def _timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+# ========= EIT data collection scripts =========
 
 def instrument_data():
     app = SimpleEIT()
@@ -83,6 +87,7 @@ def object_data(object_name: str):
 
             print("Done, next location!")
 
+# ========= Main =========
 
 def main():
     print("Running data collection script...")

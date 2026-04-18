@@ -2,14 +2,16 @@ import numpy as np
 from gpiozero import LED
 
 from device_manager import DeviceManager
-from classifier import Classifier
+from classifier import Classifier, DATASET_MAP, MODEL_FACTORY
 
+DEFAULT_OBJECT = "curc_a"
+DEFAULT_MODEL = "svm"
 
 
 class SimpleEIT:
     """Wrapper for Simple EIT instrument control."""
 
-    def __init__(self, object=):
+    def __init__(self, object_name=DEFAULT_OBJECT, model_name=DEFAULT_MODEL):
         """Pick initial classifier and frequency."""
 
         # GPIO controllers for multiplexers
@@ -26,13 +28,22 @@ class SimpleEIT:
         self.dm = DeviceManager()
 
         # Classifier to return location of OHR
-        self.classifier = Classifier()
+        self.classifier = Classifier(object_name, model_name)
 
-    def set_object():
-        pass
+    # ========= Configure classifier =========
 
-    def set_model():
-        pass
+    # For changing object and model for existing Classifier object
+    def set_object(self, object_name):
+        if object_name not in DATASET_MAP.keys():
+            raise RuntimeError("[SimpleEIT]: Object does not exist.")
+        self.classifier.set_object(object_name)
+
+    def set_model(self, model_name):
+        if model_name not in MODEL_FACTORY.keys():
+            raise RuntimeError("[SimpleEIT]: Model does not exist.")
+        self.classifier.set_model(model_name)
+
+    # ========= Get raw voltages and find location with classifier =========
 
     def get_voltages(self):
         """Get voltages from all 6 configurations with MUXs."""
@@ -89,7 +100,8 @@ class SimpleEIT:
             print(f"[SimpleEIT]: Prediction matrix: {prediction}")
             return prediction
 
-    # Context Manager
+    # ========= Context manager =========
+
     def __enter__(self):
         return self
 
@@ -99,7 +111,7 @@ class SimpleEIT:
     def close(self):
         self.dm.close()
 
-    # Helper functions
+    # ========= Helper functions =========
 
     def _set_mux_state(self, mux, state):
         """Set MUX selection lines using GPIO."""

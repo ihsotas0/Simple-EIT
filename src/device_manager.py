@@ -53,7 +53,8 @@ class DeviceManager:
 
         print("[DeviceManager]: Devices initialized successfully.")
 
-    # Context manager
+    # ========= Context manager =========
+
     def __enter__(self):
         return self
 
@@ -68,7 +69,8 @@ class DeviceManager:
         self._close_resource(self.rm)
         print("Done!")
 
-    # Helper functions
+    # ========= Helper functions =========
+
     def _close_resource(self, resource):
         try:
             if resource:
@@ -111,7 +113,8 @@ class DeviceManager:
         # No devices returned, so return False to raise error in __init__
         return False
 
-    # Device setup/control
+    # ========= Device setup and control =========
+
     def setup_device(self, device, timeout, command_list):
         """Use VISA commands to configure scope/wavegen."""
         try:
@@ -144,7 +147,8 @@ class DeviceManager:
                 f"[DeviceManager]: Failed to change scope time scale: {e}"
             )
 
-    # Main functionality
+    # ========= Main output of DeviceManager =========
+
     def get_voltage(self):
         """Records scope RMS voltage over single capture."""
         try:
@@ -163,7 +167,8 @@ class DeviceManager:
             raise RuntimeError(f"[DeviceManager]: Voltage read failed: {e}")
 
 
-# ========= TESTING =========
+# ========= Testing =========
+
 def basic_device_test():
     with DeviceManager() as dm:
 
