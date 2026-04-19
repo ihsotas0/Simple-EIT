@@ -189,7 +189,7 @@ def on_key(event):
         "f": lambda f: f.auto_calibration(
             gui_textbox("New object name: ") or "untitled", n=10
         ),
-        "g": lambda f: f.set_object(gui_textbox("Set object to: ") or "untitled"),
+        "g": lambda f: f.set_object(gui_textbox("Set object to (prepend 'auto_cal_' for new objects): ") or "untitled"),
         "1": lambda f: f.set_model("gb"),
         "2": lambda f: f.set_model("knn"),
         "3": lambda f: f.set_model("lda"),
