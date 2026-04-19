@@ -9,11 +9,20 @@ from data_collector import object_data  # For autocalibration
 DEFAULT_OBJECT = "curc_a"
 DEFAULT_MODEL = "svm"
 
+DEFAULT_SCOPE_IDN = "KEYSIGHT"
+DEFAULT_WAVEGEN_IDN = "AGILENT"
+
 
 class SimpleEIT:
     """Wrapper for Simple EIT instrument control."""
 
-    def __init__(self, object_name=DEFAULT_OBJECT, model_name=DEFAULT_MODEL):
+    def __init__(
+        self,
+        object_name=DEFAULT_OBJECT,
+        model_name=DEFAULT_MODEL,
+        scope_idn=DEFAULT_SCOPE_IDN,
+        wavegen_idn=DEFAULT_WAVEGEN_IDN,
+    ):
         """Pick initial classifier and frequency."""
 
         # GPIO controllers for multiplexers
@@ -27,7 +36,7 @@ class SimpleEIT:
         self.mux_toggle = (LED(5), LED(16))
 
         # Device manager
-        self.dm = DeviceManager()
+        self.dm = DeviceManager(scope_idn=scope_idn, wavegen_idn=wavegen_idn)
 
         # Classifier to return location of OHR
         self.classifier = Classifier()
@@ -53,6 +62,9 @@ class SimpleEIT:
 
     def set_model(self, model_name):
         self.classifier.set_model(model_name)
+
+    def get_status(self):
+        return f"object = {self.classifier.object_name}\nmodel = {self.classifier.model_name}"
 
     # ========= Get raw voltages and find location with classifier =========
 

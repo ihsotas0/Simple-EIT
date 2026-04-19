@@ -15,28 +15,43 @@ from simple_eit import SimpleEIT
 print("[Main]: Running full Simple EIT...")
 
 # Default colormap
-global_cmap = colormaps['binary']
+global_cmap = colormaps["binary"]
+
+
+def gui_textbox(prompt):
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    try:
+        return simpledialog.askstring("Input", prompt)
+    finally:
+        root.destroy()
+
 
 # ========= EIT data thread =========
-app = SimpleEIT()
+app = SimpleEIT(
+    scope_idn=gui_textbox("Identify oscilloscope: "),
+    wavegen_idn=gui_textbox("Identify wavegen: "),
+)
 
 latest_data = np.zeros((2, 8))
 data_lock = threading.Lock()
 stop_event = threading.Event()
 pause_event = threading.Event()
 
+
 def data_loop():
     global latest_data
     while not stop_event.is_set():
-        while pause_event.is_set() and not stop_event.is_set():
-            sleep(1)
+        pause_event.wait()
         try:
+            data = app.run()
             with data_lock:
-                data = app.run()
                 latest_data = data.copy()
         except Exception as e:
             print(f"[Main]: Data acquisition failed: {e}")
             sleep(1)
+
 
 thread = threading.Thread(target=data_loop, daemon=True)
 thread.start()
@@ -59,7 +74,10 @@ ax_right.axis("off")
 
 # Labels
 label_radius = 1.1
-for label, (x, y) in zip(["A", "B", "C", "D"], [(0, label_radius), (label_radius, 0), (0, -label_radius), (-label_radius, 0)]):
+for label, (x, y) in zip(
+    ["A", "B", "C", "D"],
+    [(0, label_radius), (label_radius, 0), (0, -label_radius), (-label_radius, 0)],
+):
     ax_left.text(x, y, label, ha="center", va="center", fontsize=12, fontweight="bold")
 
 # Geometry
@@ -78,27 +96,40 @@ for i in range(num_slices):
         idx = i * num_rings + ring
         radius = r_outer if ring == 0 else r_inner
         global_wedges[idx] = Wedge(
-            center=(0, 0), r=radius,
-            theta1=np.degrees(start_angle), theta2=np.degrees(start_angle + theta),
-            facecolor=global_cmap(0), lw=0
+            center=(0, 0),
+            r=radius,
+            theta1=np.degrees(start_angle),
+            theta2=np.degrees(start_angle + theta),
+            facecolor=global_cmap(0),
+            lw=0,
         )
         ax_left.add_patch(global_wedges[idx])
 
         text_radius = (r_outer + r_inner) / 2 if ring == 0 else (r_inner + 0.1) / 2
         text_angle = start_angle + theta / 2
-        x_txt, y_txt = text_radius * np.cos(text_angle), text_radius * np.sin(text_angle)
-        global_texts[idx] = ax_left.text(x_txt, y_txt, "0.00", ha="center", va="center", fontsize=8)
+        x_txt, y_txt = text_radius * np.cos(text_angle), text_radius * np.sin(
+            text_angle
+        )
+        global_texts[idx] = ax_left.text(
+            x_txt, y_txt, "0.00", ha="center", va="center", fontsize=8
+        )
 
 # Status text
 status_text = ax_right.text(
-    0.5, 0.88, "object = \nmodel = ",
-    ha="center", va="center", fontsize=12, fontweight="bold",
-    bbox=dict(boxstyle="round,pad=0.4", facecolor="whitesmoke", edgecolor="gray")
+    0.5,
+    0.88,
+    "object = \nmodel = ",
+    ha="center",
+    va="center",
+    fontsize=12,
+    fontweight="bold",
+    bbox=dict(boxstyle="round,pad=0.4", facecolor="whitesmoke", edgecolor="gray"),
 )
 
 # Instructions
 ax_right.text(
-    0.5, 0.45,
+    0.5,
+    0.45,
     """Objects:
 (a-e) curc_a to curc_e
 (f) Run auto-calibration of new object
@@ -110,8 +141,13 @@ Models:
 (7) SVM (recommended)    (8) XGB
 
 (x) Exit""",
-    ha="center", va="center", fontsize=11, family="monospace", linespacing=1.4
+    ha="center",
+    va="center",
+    fontsize=11,
+    family="monospace",
+    linespacing=1.4,
 )
+
 
 def update(frame):
     with data_lock:
@@ -126,19 +162,11 @@ def update(frame):
             global_texts[idx].set_text(f"{value:.2f}")
             global_texts[idx].set_color(text_color)
 
-    status_text.set_text(f"object = {app.classifier.object_name}\nmodel = {app.classifier.model_name}")
+    status_text.set_text(app.get_status())
     return global_wedges + global_texts + [status_text]
 
-# ========= Controls =========
-def gui_object_name():
-    root = tk.Tk()
-    root.withdraw()
-    root.attributes('-topmost', True)
-    try:
-        return simpledialog.askstring("Input", "Object Name:")
-    finally:
-        root.destroy()
 
+# ========= Controls =========
 def on_key(event):
     key = event.key
     if not key:
@@ -148,6 +176,7 @@ def on_key(event):
         print("[Main]: Exiting...")
         stop_event.set()
         app.close()
+        thread.join(timeout=2)
         plt.close(fig)
         return
 
@@ -157,8 +186,10 @@ def on_key(event):
         "c": lambda f: f.set_object("curc_c"),
         "d": lambda f: f.set_object("curc_d"),
         "e": lambda f: f.set_object("curc_e"),
-        "f": lambda f: f.auto_calibration(gui_object_name() or "untitled", n=10),
-        "g": lambda f: f.set_object(gui_object_name() or "untitled"),
+        "f": lambda f: f.auto_calibration(
+            gui_textbox("New object name: ") or "untitled", n=10
+        ),
+        "g": lambda f: f.set_object(gui_textbox("Set object to: ") or "untitled"),
         "1": lambda f: f.set_model("gb"),
         "2": lambda f: f.set_model("knn"),
         "3": lambda f: f.set_model("lda"),
@@ -179,8 +210,9 @@ def on_key(event):
         finally:
             pause_event.clear()
 
+
 fig.canvas.mpl_connect("key_press_event", on_key)
 
 # ========= Start =========
-ani = FuncAnimation(fig, update, interval=100, blit=True, cache_frame_data=False)
+ani = FuncAnimation(fig, update, interval=100, blit=False, cache_frame_data=False)
 plt.show()

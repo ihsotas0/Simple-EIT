@@ -19,8 +19,8 @@ class DeviceManager:
 
     def __init__(
         self,
-        scope_idn="KEYSIGHT",
-        wavegen_idn="AGILENT",
+        scope_idn,
+        wavegen_idn,
         scope_commands=SCOPE_COMMAND_LIST,
         wavegen_commands=WAVEGEN_COMMAND_LIST,
         scope_timeout=5000,
