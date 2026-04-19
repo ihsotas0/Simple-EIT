@@ -22,14 +22,6 @@ RANDOM_STATE = 1
 TEST_SIZE = 0.2
 CACHE_DIR = "../data/models/"
 
-DATASET_MAP = {
-    "curc_a": "../data/curc_a_data.csv",
-    "curc_b": "../data/curc_b_data.csv",
-    "curc_c": "../data/curc_c_data.csv",
-    "curc_d": "../data/curc_d_data.csv",
-    "curc_e": "../data/curc_e_data.csv",
-}
-
 MODEL_FACTORY = {
     "gb": lambda: GradientBoostingClassifier(),
     "knn": lambda: KNeighborsClassifier(n_neighbors=6),
@@ -52,14 +44,8 @@ class Classifier:
     CSV I/O and training are completely skipped if a valid cache exists.
     """
 
-    def __init__(
-        self,
-        dataset_map=DATASET_MAP,
-        model_factory=MODEL_FACTORY,
-        test_size=TEST_SIZE,
-        cache_dir=CACHE_DIR,
-    ):
-        self.dataset_map = dataset_map
+    def __init__(self, model_factory=MODEL_FACTORY, test_size=TEST_SIZE, cache_dir=CACHE_DIR):
+        self.dataset_map = self._get_data_files()
         self.model_factory = model_factory
 
         self.object_name = None
@@ -86,6 +72,10 @@ class Classifier:
 
     def set_object(self, object_name, test_size=None):
         """Sets the target object/dataset. Clears state."""
+
+        # Refresh dataset_map in case new data has been added
+        self.dataset_map = self._get_data_files()
+
         if object_name not in self.dataset_map:
             raise RuntimeError(f"[Classifier]: Dataset '{object_name}' not recognized.")
 
@@ -106,6 +96,10 @@ class Classifier:
         print(
             f"[Classifier]: Object set to '{object_name}'. CSV and training deferred until cache miss."
         )
+
+        # Auto update currently selected model to new object if a model is selected, otherwise wait for model to be set
+        if self.model_name is not None:
+            self.set_model(self.model_name)
 
     def set_model(self, model_name):
         """Sets the target model. Checks cache first. Skips CSV and training on hit."""
@@ -189,6 +183,18 @@ class Classifier:
             for chunk in iter(lambda: f.read(8192), b""):
                 h.update(chunk)
         return h.hexdigest()
+
+    @staticmethod
+    def _get_data_files():
+        data_dir = Path("../data")
+        result = {}
+
+        for file in data_dir.glob("*_data.csv"):
+            # Extract OBJECT_NAME from filename
+            key = file.stem.replace("_data", "")
+            result[key] = str(file)
+
+        return result
 
     def _get_cache_path(self):
         """Builds cache filename using precomputed dataset hash."""

@@ -3,6 +3,8 @@ from gpiozero import LED
 
 from device_manager import DeviceManager
 from classifier import Classifier
+from data_collector import object_data  # For autocalibration
+
 
 DEFAULT_OBJECT = "curc_a"
 DEFAULT_MODEL = "svm"
@@ -31,12 +33,21 @@ class SimpleEIT:
         self.classifier = Classifier()
 
         # Set to defaults to avoid classifier having no model
-        self.classifier.set_object(object_name)
-        self.classifier.set_model(model_name)
+        self.set_object(object_name)
+        self.set_model(model_name)
 
     # ========= Configure classifier =========
 
-    # For changing object and model for existing Classifier object
+    def auto_calibration(self, object_name, n):
+        """Run data collection script to make new model for new object, real-time."""
+        new_obj_name = "auto_cal_" + object_name
+
+        # n < 200 measurements per location, fast enough for real-time demo
+        object_data(new_obj_name, n=n)
+
+        self.set_object(new_obj_name)
+
+    # For changing object and model for existing Classifier object, extra layer of abstraction
     def set_object(self, object_name):
         self.classifier.set_object(object_name)
 

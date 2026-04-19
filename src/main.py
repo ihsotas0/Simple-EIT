@@ -1,22 +1,23 @@
 import threading
 from time import sleep
 
+import tkinter as tk
+from tkinter import simpledialog
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colormaps
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Wedge
 
-from classifier import Classifier
 from simple_eit import SimpleEIT
-from data_collector import object_data # For autocalibration
 
-print("Running full Simple EIT...")
+print("[Main]: Running full Simple EIT...")
 
 # Create the colormap for binary colors (white to black)
 global_cmap = plt.cm.binary
 
-# ========= EIT DATA THREAD =========
+# ========= EIT data thread =========
 
 app = SimpleEIT()
 
@@ -27,42 +28,26 @@ model_lock = threading.Lock()
 stop_event = threading.Event()
 pause_event = threading.Event()
 
-state_text = None  # matplotlib text overlay
-
-key_actions = {
-    "f": lambda: clf.select_object("finger_jonah"),
-    "v": lambda: clf.select_object("vertical_eraser"),
-    "h": lambda: clf.select_object("horz_eraser"),
-    "g": lambda: clf.select_model("gb"),
-    "k": lambda: clf.select_model("knn"),
-    "d": lambda: clf.select_model("lda"),
-    "l": lambda: clf.select_model("logreg"),
-    "m": lambda: clf.select_model("mlp"),
-    "r": lambda: clf.select_model("rf"),
-    "s": lambda: clf.select_model("svm"),
-    "x": lambda: clf.select_model("xgb"),
-}
-
 
 def data_loop():
-    """Data acquisition thread."""
     global latest_data
     while not stop_event.is_set():
-        # Pause while user is interacting
         while pause_event.is_set() and not stop_event.is_set():
-            sleep(0.05)
-        with data_lock:
-            data = app.run()
-            # [AB_1, AB_2, AD_1, AD_2, CD_1, CD_2, BC_1, BC_2]
-            # [AB_3, AB_4, AD_3, AD_4, CD_3, CD_4, BC_3, BC_4]
-            latest_data = data.copy()
+            sleep(1)
+        try:
+            with data_lock:
+                data = app.run()
+                latest_data = data.copy()
+        except Exception as e:
+            print(f"[Main]: Data acquisition failed: {e}")
+            sleep(1)  # Back off before retrying
 
 
 # Start thread
 thread = threading.Thread(target=data_loop, daemon=True)
 thread.start()
 
-# ========= DISPLAY CODE =========
+# ========= Display code =========
 
 fig = plt.figure(figsize=(10, 8))
 fig.subplots_adjust(wspace=0.25, left=0.05, right=0.98, top=0.90, bottom=0.05)
@@ -115,32 +100,31 @@ status_text = ax_right.text(
     va="center",
     fontsize=12,
     fontweight="bold",
-    bbox=dict(boxstyle="round,pad=0.4", facecolor="whitesmoke", edgecolor="gray")
+    bbox=dict(boxstyle="round,pad=0.4", facecolor="whitesmoke", edgecolor="gray"),
 )
 
 # CONTROLS (centered and padded)
 ax_right.text(
     0.5,
     0.45,
-"""(a) Auto-calibrate object
-
-Objects:
-(f) Finger (Jonah)
-(v) Vertical Eraser
-(h) Horizontal Eraser
+    """Objects:
+(a-e) curc_a to curc_e
+(f) Run auto-calibration of new object
+(g) Other, input object name
 
 Models:
-(g) GB    (k) KNN   (d) LDA
-(l) LogReg (m) MLP  (r) RF
-(s) SVM   (x) XGB
+(1) GB        (2) KNN    (3) LDA
+(4) LogReg    (5) MLP    (6) RF
+(7) SVM (recommended)    (8) XGB
 
-(e) Exit""",
+(x) Exit""",
     ha="center",
     va="center",
     fontsize=11,
     family="monospace",
     linespacing=1.4,
 )
+
 
 def update(frame):
     """Function to update the wedges and text for animation."""
@@ -162,9 +146,9 @@ def update(frame):
             )
 
     status_text.set_text(
-        f"object = {clf.object_name}\nmodel = {clf.model_name}"
+        f"object = {app.classifier.object_name}\nmodel = {app.classifier.model_name}"
     )
-    
+
     # Set plot settings
     ax_left.axis("equal")
     ax_left.axis("off")
@@ -238,7 +222,34 @@ def update_existing_text(index, value, text_color):
     global_texts[index].set_color(text_color)
 
 
-# ========= EXIT CODE =========
+# ========= User input and exit code =========
+
+
+key_actions = {
+    "a": lambda f: f.set_object("curc_a"),  # Premade objects
+    "b": lambda f: f.set_object("curc_b"),
+    "c": lambda f: f.set_object("curc_c"),
+    "d": lambda f: f.set_object("curc_d"),
+    "e": lambda f: f.set_object("curc_e"),
+    "f": lambda f: f.auto_calibration(gui_object_name(), n=10),  # Make new object data
+    "g": lambda f: f.set_object(gui_object_name()),  # Load new object from text input
+    "1": lambda f: f.set_model("gb"),  # Models to select for classification
+    "2": lambda f: f.set_model("knn"),
+    "3": lambda f: f.set_model("lda"),
+    "4": lambda f: f.set_model("logreg"),
+    "5": lambda f: f.set_model("mlp"),
+    "6": lambda f: f.set_model("rf"),
+    "7": lambda f: f.set_model("svm"),
+    "8": lambda f: f.set_model("xgb"),
+}
+
+
+def gui_object_name():
+    root = tk.Tk()
+    root.withdraw()
+
+    answer = simpledialog.askstring("Input", "Object Name:")
+    return answer
 
 
 def on_key(event):
@@ -248,20 +259,21 @@ def on_key(event):
     if not key:
         return
 
-    # EXIT
+    # End program
     if key == "e":
-        print("Exiting...")
+        print("[Main]: Exiting...")
         stop_event.set()
+        app.close()
         plt.close(fig)
         return
 
-    # If valid action key → pause loop during update
+    # If valid action key, then pause loop during runtime of function
     if key in key_actions:
         pause_event.set()
 
         try:
-            print(f"Key {key} pressed -> executing action")
-            key_actions[key]()
+            print(f"[Main]: Key {key} pressed, executing action...")
+            key_actions[key](app)
         finally:
             pause_event.clear()
 
@@ -269,7 +281,7 @@ def on_key(event):
 # Bind key press
 fig.canvas.mpl_connect("key_press_event", on_key)
 
-# ========= START DISPLAY =========
+# ========= Start display =========
 
 # Animation setup
 ani = FuncAnimation(

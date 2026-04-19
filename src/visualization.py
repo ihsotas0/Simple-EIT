@@ -13,8 +13,8 @@ loss_curves = {}
 
 for model in clf.model_factory.keys():
     for obj in clf.dataset_map.keys():
-        clf.select_object(obj)
-        clf.select_model(model)
+        clf.set_object(obj)
+        clf.set_model(model)
 
         loss_curves.update({str(obj + " " + model): clf.loss_curve})
 
