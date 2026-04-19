@@ -241,6 +241,9 @@ class Classifier:
                 "[Classifier]: Model not loaded. Call set_model() first."
             )
 
+        if feature_vector.shape != (6,):  # Expected: [V_AD, V_AB, V_BC, V_CD, V_AC, V_BD]
+            raise ValueError(f"[Classifier]: Expected 6 voltage values, got {feature_vector.shape}")
+
         v = np.asarray(feature_vector).reshape(1, -1)
         v_scaled = self.scaler.transform(v)
         probs = self.model.predict_proba(v_scaled)[0]

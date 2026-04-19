@@ -5,12 +5,18 @@ from device_manager import DeviceManager
 from classifier import Classifier
 from data_collector import object_data  # For autocalibration
 
-
+# To ensure classifier is initialized correctly
 DEFAULT_OBJECT = "curc_a"
 DEFAULT_MODEL = "svm"
 
+# Default scope and wavegen identifiers
 DEFAULT_SCOPE_IDN = "KEYSIGHT"
 DEFAULT_WAVEGEN_IDN = "AGILENT"
+
+# GPIO pin defaults
+DEFAULT_MUX1_PINS = (19, 26)
+DEFAULT_MUX2_PINS = (6, 13)
+DEFAULT_MUX_TOGGLE_PINS = (5, 16)
 
 
 class SimpleEIT:
@@ -22,18 +28,21 @@ class SimpleEIT:
         model_name=DEFAULT_MODEL,
         scope_idn=DEFAULT_SCOPE_IDN,
         wavegen_idn=DEFAULT_WAVEGEN_IDN,
+        mux1_pins=DEFAULT_MUX1_PINS,
+        mux2_pins=DEFAULT_MUX2_PINS,
+        mux_toggle=DEFAULT_MUX_TOGGLE_PINS,
     ):
         """Pick initial classifier and frequency."""
 
         # GPIO controllers for multiplexers
         # MUX1 controls S+ and V+ (A0, A1)
-        self.mux1 = (LED(19), LED(26))
+        self.mux1 = tuple(LED(pin) for pin in mux1_pins)
 
         # MUX2 controls S- and V- (A0, A1)
-        self.mux2 = (LED(6), LED(13))
+        self.mux2 = tuple(LED(pin) for pin in mux2_pins)
 
         # Turns MUXs off before switching and on again
-        self.mux_toggle = (LED(5), LED(16))
+        self.mux_toggle = tuple(LED(pin) for pin in mux1_pins)
 
         # Device manager
         self.dm = DeviceManager(scope_idn=scope_idn, wavegen_idn=wavegen_idn)
