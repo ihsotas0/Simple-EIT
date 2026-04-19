@@ -1,5 +1,4 @@
 import threading
-from functools import partial
 from time import sleep
 
 import matplotlib.pyplot as plt
@@ -10,7 +9,7 @@ from matplotlib.patches import Wedge
 
 from classifier import Classifier
 from simple_eit import SimpleEIT
-from data_collector import object_data
+from data_collector import object_data # For autocalibration
 
 print("Running full Simple EIT...")
 
@@ -19,13 +18,7 @@ global_cmap = plt.cm.binary
 
 # ========= EIT DATA THREAD =========
 
-clf = Classifier()
-
-# Default object and model
-clf.select_object("curc_a")
-clf.select_model("knn")
-
-app = SimpleEIT(clf)
+app = SimpleEIT()
 
 # Shared data + synchronization
 latest_data = np.zeros((2, 8))

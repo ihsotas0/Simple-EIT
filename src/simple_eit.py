@@ -28,7 +28,11 @@ class SimpleEIT:
         self.dm = DeviceManager()
 
         # Classifier to return location of OHR
-        self.classifier = Classifier(object_name, model_name)
+        self.classifier = Classifier()
+
+        # Set to defaults to avoid classifier having no model
+        self.classifier.set_object(object_name)
+        self.classifier.set_model(model_name)
 
     # ========= Configure classifier =========
 

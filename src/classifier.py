@@ -19,8 +19,9 @@ from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
 RANDOM_STATE = 1
+TEST_SIZE = 0.2
+CACHE_DIR = "../data/models/"
 
-# Paths to collected CSV data
 DATASET_MAP = {
     "curc_a": "../data/curc_a_data.csv",
     "curc_b": "../data/curc_b_data.csv",
@@ -29,16 +30,13 @@ DATASET_MAP = {
     "curc_e": "../data/curc_e_data.csv",
 }
 
-# Model factory: uses lambdas to defer instantiation
 MODEL_FACTORY = {
     "gb": lambda: GradientBoostingClassifier(),
     "knn": lambda: KNeighborsClassifier(n_neighbors=6),
     "lda": lambda: LinearDiscriminantAnalysis(),
     "logreg": lambda: LogisticRegression(max_iter=2500),
     "mlp": lambda: MLPClassifier(
-        hidden_layer_sizes=(10, 10),
-        max_iter=2500,
-        random_state=RANDOM_STATE,
+        hidden_layer_sizes=(10, 10), max_iter=2500, random_state=RANDOM_STATE
     ),
     "rf": lambda: RandomForestClassifier(n_estimators=200, random_state=RANDOM_STATE),
     "svm": lambda: SVC(kernel="rbf", probability=True),
@@ -47,81 +45,108 @@ MODEL_FACTORY = {
     ),
 }
 
-CACHE_DIR = "../data/models/"
-
-# Train / total
-TEST_SIZE = 0.2
-
 
 class Classifier:
     """
-    Handles classifier models. Includes caching, training, object and model
-    selection, and output formatting.
-
-    Input (v):
-        [V_AD, V_AB, V_BC, V_CD, V_AC, V_BD]
-    Output probability distribution: (sum=1)
-        [[AB_1, AB_2, AD_1, AD_2, CD_1, CD_2, BC_1, BC_2],
-         [AB_3, AB_4, AD_3, AD_4, CD_3, CD_4, BC_3, BC_4]]
+    Handles classifier models with dynamic switching and smart caching.
+    CSV I/O and training are completely skipped if a valid cache exists.
     """
 
-    def __init__(self, object_name, model_name, dataset_map=DATASET_MAP, ):
+    def __init__(
+        self,
+        dataset_map=DATASET_MAP,
+        model_factory=MODEL_FACTORY,
+        test_size=TEST_SIZE,
+        cache_dir=CACHE_DIR,
+    ):
+        self.dataset_map = dataset_map
+        self.model_factory = model_factory
 
-        print("[Classifier]: Initializing classifier...")
+        self.object_name = None
+        self.model_name = None
+        self.test_size = test_size
+        self._current_dataset_hash = None  # Cached hash to avoid repeated disk reads
 
-        # Make model cache directory if it doesn't exist
-        cache_dir = Path(CACHE_DIR)
-        cache_dir.mkdir(parents=True, exist_ok=True)
+        # Model and preprocessing state
+        self.model = None
+        self.scaler = None
+        self.encoder = None
+        self.data = {}
+
+        # Metadata
+        self.accuracy = None
+        self.loss_curve = None
+        self.training_timestamp = None
+
+        self.cache_dir = cache_dir
+
+        Path(self.cache_dir).mkdir(parents=True, exist_ok=True)
+
+    # ========= Public switching API =========
+
+    def set_object(self, object_name, test_size=None):
+        """Sets the target object/dataset. Clears state."""
+        if object_name not in self.dataset_map:
+            raise RuntimeError(f"[Classifier]: Dataset '{object_name}' not recognized.")
+
+        self.object_name = object_name
+        if test_size is not None:
+            self.test_size = test_size
+
+        # Compute hash ONCE per object switch to avoid repeated CSV reads
+        csv_path = self.dataset_map[self.object_name]
+        self._current_dataset_hash = self._hash_file(csv_path)
+
+        # Clear all state to prevent leakage
+        self.data = {}
+        self.model = None
+        self.scaler = None
+        self.encoder = None
+
+        print(
+            f"[Classifier]: Object set to '{object_name}'. CSV and training deferred until cache miss."
+        )
+
+    def set_model(self, model_name):
+        """Sets the target model. Checks cache first. Skips CSV and training on hit."""
+        if not self.object_name:
+            raise RuntimeError("[Classifier]: Call set_object() before set_model().")
+        if model_name not in self.model_factory:
+            raise KeyError(f"[Classifier]: Model '{model_name}' not supported.")
 
         self.model_name = model_name
-        self.object_name = object_name
-        self.model = None
+        cache_path = self._get_cache_path()
 
-        self.set_object(self.object_name)
-        self.set_model(self.model_name)
+        if cache_path.exists():
+            self._load_from_cache(cache_path)
+            print(
+                f"[Classifier]: Cache hit. Loaded {self.model_name} for {self.object_name}. Load CSV and train skipped."
+            )
+        else:
+            print(
+                f"[Classifier]: Cache miss. Loading CSV for {self.object_name} and training {self.model_name}..."
+            )
+            self._prepare_data()
+            self._train_and_cache(cache_path)
 
+    # ========= Internal pipeline =========
+
+    def _prepare_data(self, random_state=RANDOM_STATE):
+        """Loads CSV, fits scaler/encoder, and splits data. Called only on cache miss."""
+        df = pd.read_csv(self.dataset_map[self.object_name])
+
+        # Fresh instances to guarantee clean state
         self.scaler = StandardScaler()
         self.encoder = LabelEncoder()
 
-        self.data = {}
-
-        print(f"[Classifier]: {model_name} for {object_name} initialized successfully.")
-
-    # ========= Utilities =========
-
-    def _get_cache_path(self, object_name, model_name, df):
-        """Returns model cache file path for creation and retrival of file."""
-
-        # Creates a unique hash based on dataframe content.
-        dataset_hash = hashlib.md5(
-            pd.util.hash_pandas_object(df, index=True).values
-        ).hexdigest()
-
-        filename = f"{object_name}_{model_name}_{dataset_hash}.joblib"
-
-        return Path(CACHE_DIR) / filename
-
-    # ========= Load object data =========
-
-    def set_object(self, object_name, test_size = TEST_SIZE):
-        """Loads, scales, and splits object voltage dataset."""
-        if object_name not in DATASET_MAP.keys():
-            raise RuntimeError(f"[Classifier]: Dataset {object_name} not recognized.")
-
-        # Get CSV
-        df = pd.read_csv(self.dataset_map[object_name])
-
-        # Get labels and voltages
         x = df.drop(["Timestamp", "Label"], axis=1).values
         y = df["Label"].values
 
-        # Preprocessing
         y_encoded = self.encoder.fit_transform(y)
         x_scaled = self.scaler.fit_transform(x)
 
-        # Split dataset
         x_train, x_test, y_train, y_test = train_test_split(
-            x_scaled, y_encoded, test_size=test_size, random_state=RANDOM_STATE
+            x_scaled, y_encoded, test_size=self.test_size, random_state=random_state
         )
 
         self.data = {
@@ -131,91 +156,99 @@ class Classifier:
             "y_test": y_test,
         }
 
-    # ========= Train model and cache =========
-
-    def set_model(self, model_name: str):
-        """Instantiates the chosen model."""
-        if model_name not in self.model_factory:
-            raise KeyError(f"[Classifier]: Model '{model_name}' not supported.")
-
-        # Pick model
-        self.model_name = model_name
-        self.model = self.model_factory[model_name]()
-
-        # Train and save, or load model
-        self._train_or_load()
-
-    def _train_or_load(self):
-        """Check for existing cache, otherwise train and save."""
-        if not self.model or not self.data:
-           raise RuntimeError("[Classifier]: Must select object and/or model before training.")
-
-        cache_path = self._get_cache_path()
-
-        if cache_path.exists():
-            print(f"Loading cached model: {cache_path.name}")
-            payload = joblib.load(cache_path)
-            self.model = payload["model"]
-            self.accuracy = payload["metadata"]["accuracy"]
-            self.loss_curve = payload["metadata"]["loss_curve"]
-            self.training_timestamp = payload["metadata"]["timestamp"]
-            return
-
+    def _train_and_cache(self, cache_path):
+        """Instantiates, trains, evaluates, and saves to cache."""
+        self.model = self.model_factory[self.model_name]()
         print(f"[Classifier]: Training {self.model_name}...")
+
         self.model.fit(self.data["x_train"], self.data["y_train"])
 
-        if hasattr(self.model, "loss_curve_"):
-            self.loss_curve = self.model.loss_curve_
-        else:
-            self.loss_curve = "No curve"
-
+        self.loss_curve = getattr(self.model, "loss_curve_", "No curve")
         self.accuracy = self._evaluate()
         print(
-            f"[Classifier]: Model accuracy for ({self.object_name} using {self.model_name}): {self.accuracy}"
+            f"[Classifier]: Accuracy ({self.object_name} | {self.model_name}): {self.accuracy:.4f}"
         )
 
         self.training_timestamp = datetime.now().isoformat()
         self._save_cache(cache_path)
 
-    def _save_cache(self, path: Path):
+    def _evaluate(self):
+        """Returns accuracy on test set."""
+        if not self.data:
+            raise RuntimeError("[Classifier]: Test data not available for evaluation.")
+        preds = self.model.predict(self.data["x_test"])
+        return accuracy_score(self.data["y_test"], preds)
+
+    # ========= Cache I/O =========
+
+    @staticmethod
+    def _hash_file(filepath):
+        """Fast, memory-efficient MD5 hash of a file."""
+        h = hashlib.md5()
+        with open(filepath, "rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    def _get_cache_path(self):
+        """Builds cache filename using precomputed dataset hash."""
+        return (
+            Path(self.cache_dir)
+            / f"{self.object_name}_{self.model_name}_{self._current_dataset_hash}.joblib"
+        )
+
+    def _load_from_cache(self, cache_path):
+        """Restores model, scaler, encoder, and metadata. No CSV loaded."""
+        print(f"Loading cached model: {cache_path.name}")
+        payload = joblib.load(cache_path)
+
+        self.model = payload["model"]
+        self.scaler = payload["scaler"]
+        self.encoder = payload["encoder"]
+
+        meta = payload["metadata"]
+        self.accuracy = meta["accuracy"]
+        self.loss_curve = meta["loss_curve"]
+        self.training_timestamp = meta["timestamp"]
+
+    def _save_cache(self, cache_path):
+        """Serializes model, scaler, encoder, and metadata."""
         payload = {
             "model": self.model,
+            "scaler": self.scaler,
+            "encoder": self.encoder,
             "metadata": {
                 "accuracy": self.accuracy,
                 "loss_curve": self.loss_curve,
                 "timestamp": self.training_timestamp,
             },
         }
-        joblib.dump(payload, path)
-        print(f"Model saved at {path}.")
+        joblib.dump(payload, cache_path)
+        print(f"Cache saved at {cache_path}")
 
-    # ========= Inference and formatting =========
+    # ========= Inference =========
 
     def predict(self, feature_vector):
         """Predicts and returns formatted probability matrix."""
-        v = feature_vector.reshape(1, -1)
+        if self.model is None or self.scaler is None:
+            raise RuntimeError(
+                "[Classifier]: Model not loaded. Call set_model() first."
+            )
+
+        v = np.asarray(feature_vector).reshape(1, -1)
         v_scaled = self.scaler.transform(v)
-
         probs = self.model.predict_proba(v_scaled)[0]
-
         return self._format_as_matrix(probs)
 
     def _format_as_matrix(self, probs):
-        """Maps probabilities to layout for Matplotlib circular display code."""
+        """Maps probabilities to layout for Matplotlib circular display."""
         labels = self.encoder.classes_
         prob_map = dict(zip(labels, probs))
 
-        # Define grid order based on experimental setup
         grid_layout = [
             ["AB_1", "AB_2", "AD_1", "AD_2", "CD_1", "CD_2", "BC_1", "BC_2"],
             ["AB_3", "AB_4", "AD_3", "AD_4", "CD_3", "CD_4", "BC_3", "BC_4"],
         ]
-
         return np.array(
             [[prob_map.get(lbl, 0.0) for lbl in row] for row in grid_layout]
         )
-
-    def _evaluate(self) -> float:
-        """Returns accuracy score on the test set."""
-        preds = self.model.predict(self.data["x_test"])
-        return accuracy_score(self.data["y_test"], preds)
