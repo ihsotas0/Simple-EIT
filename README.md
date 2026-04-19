@@ -1,9 +1,220 @@
 # Simple-EIT
 
-Electrical impedance tomography software for four electrode devices. Generates a
-4 pixel image showing the location of the highest resistivity in an aqueous
-solution. Hardware requirements: Keysight digital multimeter, Agilent waveform
-generator, 2 x MUX36D04EVM-PDK, and DC power supply.
+> **Electrical impedance tomography software for custom four-electrode device**
 
-Copyright (c) 2026
-Jonah Spector, Connor Cassidy, Chris Rayner
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python
+3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
+
+Simple-EIT generates a real-time 16-sector image showing the location of an
+object of higher resistivity (OHR) in an aqueous solution using machine learning
+classification of voltage measurements from a custom 4-electrode sensor array.
+
+Research was performed using the device on multiple objects of different radii:
+
+![CURC Poster](./doc/Simple_EIT_CURC_Poster.png)
+
+---
+
+## Overview
+
+Simple-EIT is a complete software stack and machine learning pipeline for that:
+
+- **Acquires voltage data** from 6 electrode configurations using multiplexed
+  hardware
+- **Classifies measurements** using trained ML models to identify OHR location
+- **Visualizes results** in a real-time circular 16-sector display
+- **Supports multiple classifiers**: SVM (recommended), Random Forest, XGBoost,
+  Neural Networks, and more
+- **Caches trained models** for each object to avoid redundant training
+
+```
+┌──────────────────────────────────────────────────┐
+│  Simple-EIT Architecture                         │
+├──────────────────────────────────────────────────┤
+│  main.py           → GUI and orchestration       │
+│  simple_eit.py     → EIT control layer           │
+│  device_manager.py → PyVISA instrument control   │
+│  classifier.py     → ML model management         │
+│  data_collector.py → Training data collection    │
+│  visualization.py  → CURC figures                │
+└──────────────────────────────────────────────────┘ 
+```
+
+---
+
+## Hardware Requirements
+
+| Component | Model/Specification | Purpose |
+|-----------|-------------------|---------|
+| Digital Multimeter | Keysight (any VISA-compatible) | RMS voltage measurement |
+| Waveform Generator | Agilent/Keysight (any VISA-compatible) | Excitation signal |
+| Analog Multiplexers | 2× MUX36D04EVM-PDK | Electrode selection (S+, S-, V+, V-) |
+| DC Power Supply | 10 V DC | Power multiplexer evaluation boards |
+| Controller | Raspberry Pi 3B (recommended) | GPIO control and computation |
+| 3D Printed Test Rig | PET G | Hold OHR and water |
+| Electrodes | 4x Stainless steel electrodes | Measure voltage/generate current |
+| Connectors | (16 + 2 + 2 + 4)x Banana hook connectors | Wire devices together |
+
+> **Safety Note**: Always verify Raspberry Pi can not recieve 10 V from DC power
+> supply.
+
+---
+
+## Installation
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/ihsotas0/simple-eit.git
+cd simple-eit
+```
+
+### 2. Install Python Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Raspberry Pi Setup
+```bash
+# TODO: Write full setup for PyVISA to allow USB connection
+```
+
+---
+
+## Quick Start
+
+### Run the Main Application
+```bash
+cd src
+python main.py
+```
+
+1. **Enter instrument identifiers** when prompted (e.g., `KEYSIGHT`, `AGILENT`)
+2. **Use keyboard controls** to interact:
+
+| Key | Action |
+|-----|--------|
+| `a`-`e` | Select predefined object (`curc_a` to `curc_e`) |
+| `f` | Run auto-calibration for new object |
+| `g` | Set custom object name |
+| `1`-`8` | Switch ML model (see table below) |
+| `x` | Exit application |
+
+### Available ML Models
+| Key | Model | Description |
+|-----|-------|-------------|
+| `1` | Gradient Boosting | `sklearn.ensemble.GradientBoostingClassifier` |
+| `2` | K-Nearest Neighbors | `sklearn.neighbors.KNeighborsClassifier` |
+| `3` | Linear Discriminant Analysis | `sklearn.discriminant_analysis.LinearDiscriminantAnalysis` |
+| `4` | Logistic Regression | `sklearn.linear_model.LogisticRegression` |
+| `5` | Multi-Layer Perceptron | `sklearn.neural_network.MLPClassifier` |
+| `6` | Random Forest | `sklearn.ensemble.RandomForestClassifier` |
+| `7` | **Support Vector Machine** | `sklearn.svm.SVC` (recommended) |
+| `8` | XGBoost | `xgboost.XGBClassifier` |
+
+### Collect Training Data
+```bash
+cd src
+python data_collector.py
+```
+
+Choose:
+- **`i`** → Collect instrument characterization data across frequencies
+- **`o`** → Collect object-specific data (prompts for object name and location
+  positioning)
+
+> **Data Collection Workflow**:
+> 1. Place test object at prompted location (AB_1, AB_2, ..., BC_4)
+> 2. Press Enter to confirm position
+> 3. System collects `n` measurements (default: 200)
+> 4. Repeat for all 16 locations
+> 5. CSV saved to `../data/{object_name}_data.csv`
+
+---
+
+## Project Structure
+
+```
+simple-eit/
+├── LICENSE                # MIT License
+├── README.md              # This file
+├── requirements.txt       # Python dependencies
+│
+├── src/                   # Source code
+│   ├── main.py            # Entry point: GUI, threading, visualization
+│   ├── simple_eit.py      # High-level EIT control wrapper
+│   ├── classifier.py      # ML model management & inference
+│   ├── device_manager.py  # PyVISA hardware interface
+│   ├── data_collector.py  # Training data collection utilities
+│   └── visualization.py   # CURC figure code
+│
+├── data/                  # Datasets & cached models
+│   ├── *_data.csv         # Training datasets (generated)
+│   └── models/            # Cached .joblib model files
+│
+├── cad/                   # Test rig and OHR design files
+│   └── *.step, *.stl
+│
+└── doc/                   # Extended documentation
+```
+
+---
+
+## Configuration
+
+### Model Caching
+Models are automatically cached using a hash of the training dataset:
+
+```
+data/models/{object_name}_{model_name}_{dataset_hash}.joblib
+```
+
+To force retraining, delete the corresponding `.joblib` file.
+
+---
+
+## License
+
+Distributed under the **MIT License**.
+
+```
+Copyright (c) 2026 Jonah Spector, Connor Cassidy, Chris Rayner
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+---
+
+## Acknowledgments
+
+Chuck Duey, Dr. Elaine Linde, Dr. Jennifer Mueller, Dr. Diego Krapf, Prof.
+Olivera Notaros, Alaa Jallad, Nicholas Green, and Jennifer Kreinbrink.
+
+---
+
+## Contact
+
+- **Issues**: [GitHub Issues](https://github.com/ihsotas0/simple-eit/issues)
+- **Authors**: 
+  - Jonah Spector ([@ihsotas0](https://github.com/ihsotas0))
+  - Connor Cassidy
+  - Chris Rayner
+
+> *This project is under active development. APIs and hardware interfaces may
+> change.*

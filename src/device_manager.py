@@ -13,6 +13,7 @@ SCOPE_COMMAND_LIST = [
 # Models trained on these parameters
 WAVEGEN_COMMAND_LIST = ["APPL:SIN 10e3,2.5,2.5"]
 
+DEFAULT_TIMEOUT = 5000 # ms
 
 class DeviceManager:
     """Encapsulates PyVISA for easy, error reporting instrument management."""
@@ -23,8 +24,8 @@ class DeviceManager:
         wavegen_idn,
         scope_commands=SCOPE_COMMAND_LIST,
         wavegen_commands=WAVEGEN_COMMAND_LIST,
-        scope_timeout=5000,
-        wavegen_timeout=5000,
+        scope_timeout=DEFAULT_TIMEOUT,
+        wavegen_timeout=DEFAULT_TIMEOUT,
     ):
         print("[DeviceManager]: Initializing devices...")
 
