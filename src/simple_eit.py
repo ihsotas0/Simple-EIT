@@ -2,7 +2,7 @@ import numpy as np
 from gpiozero import LED
 
 from device_manager import DeviceManager
-from classifier import Classifier, DATASET_MAP, MODEL_FACTORY
+from classifier import Classifier
 
 DEFAULT_OBJECT = "curc_a"
 DEFAULT_MODEL = "svm"
@@ -34,13 +34,9 @@ class SimpleEIT:
 
     # For changing object and model for existing Classifier object
     def set_object(self, object_name):
-        if object_name not in DATASET_MAP.keys():
-            raise RuntimeError("[SimpleEIT]: Object does not exist.")
         self.classifier.set_object(object_name)
 
     def set_model(self, model_name):
-        if model_name not in MODEL_FACTORY.keys():
-            raise RuntimeError("[SimpleEIT]: Model does not exist.")
         self.classifier.set_model(model_name)
 
     # ========= Get raw voltages and find location with classifier =========

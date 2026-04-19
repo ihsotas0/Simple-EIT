@@ -179,9 +179,9 @@ def basic_device_test():
 
 if __name__ == "__main__":
     try:
-        print("Running basic device test...")
+        print("[DeviceManager]: Running basic device test...")
         basic_device_test()
     except RuntimeError as e:
-        print(f"Expected error: {e}")
+        print(f"[DeviceManager]: Expected error: {e}")
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        print(f"[DeviceManager]: Unexpected error: {e}")

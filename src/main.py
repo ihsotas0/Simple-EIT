@@ -10,6 +10,7 @@ from matplotlib.patches import Wedge
 
 from classifier import Classifier
 from simple_eit import SimpleEIT
+from data_collector import object_data
 
 print("Running full Simple EIT...")
 

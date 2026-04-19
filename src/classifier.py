@@ -65,7 +65,7 @@ class Classifier:
          [AB_3, AB_4, AD_3, AD_4, CD_3, CD_4, BC_3, BC_4]]
     """
 
-    def __init__(self, object_name, model_name):
+    def __init__(self, object_name, model_name, dataset_map=DATASET_MAP, ):
 
         print("[Classifier]: Initializing classifier...")
 
@@ -73,19 +73,21 @@ class Classifier:
         cache_dir = Path(CACHE_DIR)
         cache_dir.mkdir(parents=True, exist_ok=True)
 
-        self.set_object(model_name)
-        self.set_model(model_name)
-
+        self.model_name = model_name
+        self.object_name = object_name
         self.model = None
+
+        self.set_object(self.object_name)
+        self.set_model(self.model_name)
 
         self.scaler = StandardScaler()
         self.encoder = LabelEncoder()
 
         self.data = {}
 
-        print(f"[Classifier]: {model_name.upper()} for {object_name.upper()} initialized successfully.")
+        print(f"[Classifier]: {model_name} for {object_name} initialized successfully.")
 
-    # ========= UTILITIES =========
+    # ========= Utilities =========
 
     def _get_cache_path(self, object_name, model_name, df):
         """Returns model cache file path for creation and retrival of file."""
@@ -99,39 +101,15 @@ class Classifier:
 
         return Path(CACHE_DIR) / filename
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # ========= LOAD OBJECT DATA =========
+    # ========= Load object data =========
 
     def set_object(self, object_name, test_size = TEST_SIZE):
         """Loads, scales, and splits object voltage dataset."""
         if object_name not in DATASET_MAP.keys():
-            raise RuntimeError(f"[Classifier]: Dataset {object_name.upper()} not recognized.")
+            raise RuntimeError(f"[Classifier]: Dataset {object_name} not recognized.")
 
         # Get CSV
         df = pd.read_csv(self.dataset_map[object_name])
-
-        cache_path = _get_cache_path(object_name)
 
         # Get labels and voltages
         x = df.drop(["Timestamp", "Label"], axis=1).values
@@ -153,12 +131,12 @@ class Classifier:
             "y_test": y_test,
         }
 
-    # ========= TRAIN MODEL AND CACHE =========
+    # ========= Train model and cache =========
 
     def set_model(self, model_name: str):
         """Instantiates the chosen model."""
         if model_name not in self.model_factory:
-            raise KeyError(f"Model '{model_name}' not supported.")
+            raise KeyError(f"[Classifier]: Model '{model_name}' not supported.")
 
         # Pick model
         self.model_name = model_name
@@ -169,8 +147,8 @@ class Classifier:
 
     def _train_or_load(self):
         """Check for existing cache, otherwise train and save."""
-        # if not self.model or not self.data:
-        #    raise RuntimeError("Must select object and model before training.")
+        if not self.model or not self.data:
+           raise RuntimeError("[Classifier]: Must select object and/or model before training.")
 
         cache_path = self._get_cache_path()
 
@@ -183,7 +161,7 @@ class Classifier:
             self.training_timestamp = payload["metadata"]["timestamp"]
             return
 
-        print(f"Training {self.model_name}...")
+        print(f"[Classifier]: Training {self.model_name}...")
         self.model.fit(self.data["x_train"], self.data["y_train"])
 
         if hasattr(self.model, "loss_curve_"):
@@ -193,7 +171,7 @@ class Classifier:
 
         self.accuracy = self._evaluate()
         print(
-            f"Model accuracy ({self.object_name} : {self.model_name}): {self.accuracy}."
+            f"[Classifier]: Model accuracy for ({self.object_name} using {self.model_name}): {self.accuracy}"
         )
 
         self.training_timestamp = datetime.now().isoformat()
@@ -211,18 +189,18 @@ class Classifier:
         joblib.dump(payload, path)
         print(f"Model saved at {path}.")
 
-    # ========= Inference & Formatting =========
+    # ========= Inference and formatting =========
 
-    def predict(self, feature_vector: list) -> np.ndarray:
+    def predict(self, feature_vector):
         """Predicts and returns formatted probability matrix."""
-        v = np.array(feature_vector).reshape(1, -1)
+        v = feature_vector.reshape(1, -1)
         v_scaled = self.scaler.transform(v)
 
         probs = self.model.predict_proba(v_scaled)[0]
 
         return self._format_as_matrix(probs)
 
-    def _format_as_matrix(self, probs: np.ndarray) -> np.ndarray:
+    def _format_as_matrix(self, probs):
         """Maps probabilities to layout for Matplotlib circular display code."""
         labels = self.encoder.classes_
         prob_map = dict(zip(labels, probs))
