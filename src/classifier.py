@@ -205,7 +205,7 @@ class Classifier:
 
     def _load_from_cache(self, cache_path):
         """Restores model, scaler, encoder, and metadata. No CSV loaded."""
-        print(f"Loading cached model: {cache_path.name}")
+        print(f"[Classifier]: Loading cached model: {cache_path.name}")
         payload = joblib.load(cache_path)
 
         self.model = payload["model"]

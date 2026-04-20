@@ -1,3 +1,4 @@
+import os
 import threading
 from time import sleep
 import tkinter as tk
@@ -11,6 +12,9 @@ from matplotlib.patches import Wedge
 
 from simple_eit import SimpleEIT
 
+# Suppress Qt/Tkinter nested event loop warning (harmless but noisy)
+os.environ["QT_LOGGING_RULES"] = "*.debug=false;qt.qpa.*=false"
+
 print("[Main]: Running full Simple EIT...")
 global_cmap = colormaps["viridis"]  # Visible from 0.0
 
@@ -19,14 +23,15 @@ def gui_textbox(prompt):
     root.withdraw()
     root.attributes("-topmost", True)
     try:
-        return simpledialog.askstring("Input", prompt)
+        res = simpledialog.askstring("Input", prompt, parent=root)
+        return res if res else "untitled"
     finally:
         root.destroy()
 
 # ========= EIT data thread =========
 app = SimpleEIT(
-    scope_idn=gui_textbox("Identify oscilloscope: "),
-    wavegen_idn=gui_textbox("Identify wavegen: "),
+    scope_idn=gui_textbox("Identify oscilloscope ('DSOX'): "),
+    wavegen_idn=gui_textbox("Identify wavegen ('EDU'): "),
 )
 
 latest_data = 0.5 * np.ones((2, 8))
@@ -34,17 +39,16 @@ data_lock = threading.Lock()
 stop_event = threading.Event()
 pause_event = threading.Event()
 pause_event.set()  # Start in RUNNING state
-hardware_lock = threading.Lock()  # NEW: Absolute hardware mutex
+hardware_lock = threading.Lock()  # Absolute hardware mutex
 
 def data_loop():
     global latest_data
     while not stop_event.is_set():
-        pause_event.wait()  # Blocks immediately when cleared
+        pause_event.wait()
         
-        # Acquire hardware lock. Blocks if calibration holds it.
         acquired = hardware_lock.acquire(timeout=0.1)
         if not acquired:
-            continue  # Calibration running, skip this cycle
+            continue
             
         try:
             data = app.run()
@@ -61,29 +65,60 @@ thread = threading.Thread(target=data_loop, daemon=True)
 thread.start()
 
 # ========= Display setup =========
-fig = plt.figure(figsize=(10, 8), facecolor="lightgray")
-fig.subplots_adjust(wspace=0.25, left=0.05, right=0.98, top=0.90, bottom=0.05)
-gs = fig.add_gridspec(1, 2, width_ratios=[2, 1])
+# figsize=(10,6) + width_ratios=[3,2] => Left axis is exactly 6x6 inches
+fig = plt.figure(figsize=(10, 6), facecolor="#e9ecef")
+fig.subplots_adjust(wspace=0.05, left=0.08, right=0.95, top=0.92, bottom=0.08)
+gs = fig.add_gridspec(1, 2, width_ratios=[3, 2])
 
 ax_left = fig.add_subplot(gs[0, 0])
 ax_right = fig.add_subplot(gs[0, 1])
 
-ax_left.set_title("Simple EIT Display", pad=16, fontsize=13, fontweight="bold")
-ax_right.set_title("Controls and Status", pad=16, fontsize=13, fontweight="bold")
-
+# LEFT: EIT Display
+ax_left.set_title("Simple EIT Display", pad=10, fontsize=13, fontweight="bold", color="#2c3e50")
 ax_left.set_xlim(-1.25, 1.25)
 ax_left.set_ylim(-1.25, 1.25)
+ax_left.set_aspect('equal', adjustable='box')
 ax_left.axis("off")
 ax_left.set_facecolor("white")
-ax_right.axis("off")
 
+# Labels
 label_radius = 1.15
 for label, (x, y) in zip(
     ["A", "B", "C", "D"],
     [(0, label_radius), (label_radius, 0), (0, -label_radius), (-label_radius, 0)],
 ):
-    ax_left.text(x, y, label, ha="center", va="center", fontsize=12, fontweight="bold")
+    ax_left.text(x, y, label, ha="center", va="center", fontsize=12, fontweight="bold", color="#34495e")
 
+# RIGHT: Controls & Status
+ax_right.axis("off")
+ax_right.set_facecolor("#f8f9fa")
+
+# Status Box
+status_text = ax_right.text(
+    0.5, 0.88, "🟢 READY\nObject: None\nModel: None",
+    ha="center", va="center", fontsize=11,
+    bbox=dict(boxstyle="round,pad=0.6", facecolor="#d4edda", edgecolor="#28a745")
+)
+
+# Instructions Box
+ax_right.text(
+    0.5, 0.42,
+    """🎯 OBJECTS
+  a-e : curc_a to curc_e
+  f   : Auto-calibrate (5 min)
+  g   : Custom object
+
+🤖 MODELS
+  1 : GB      2 : KNN    3 : LDA
+  4 : LogReg  5 : MLP    6 : RF
+  7 : SVM     8 : XGB
+
+🛑 x : Exit & Close""",
+    ha="center", va="center", fontsize=10, family="monospace", linespacing=1.7,
+    bbox=dict(boxstyle="round,pad=0.8", facecolor="white", edgecolor="#ced4da", alpha=0.9)
+)
+
+# Geometry & Wedges
 num_slices, num_rings = 8, 2
 theta = 2 * np.pi / num_slices
 r_outer = 1.0
@@ -103,8 +138,8 @@ for i in range(num_slices):
             theta1=np.degrees(start_angle),
             theta2=np.degrees(start_angle + theta),
             facecolor=global_cmap(0.5),
-            lw=1,
-            edgecolor="gray",
+            lw=1.2,
+            edgecolor="#adb5bd",
         )
         ax_left.add_patch(global_wedges[idx])
 
@@ -112,30 +147,8 @@ for i in range(num_slices):
         text_angle = start_angle + theta / 2
         x_txt, y_txt = text_radius * np.cos(text_angle), text_radius * np.sin(text_angle)
         global_texts[idx] = ax_left.text(
-            x_txt, y_txt, "0.50", ha="center", va="center", fontsize=8, fontweight="bold"
+            x_txt, y_txt, "0.50", ha="center", va="center", fontsize=8, fontweight="bold", color="#212529"
         )
-
-status_text = ax_right.text(
-    0.5, 0.88, "object = \nmodel = ",
-    ha="center", va="center", fontsize=12, fontweight="bold",
-    bbox=dict(boxstyle="round,pad=0.4", facecolor="whitesmoke", edgecolor="gray"),
-)
-
-ax_right.text(
-    0.5, 0.45,
-    """Objects:
-(a-e) curc_a to curc_e
-(f) Run auto-calibration of new object
-(g) Other, input object name
-
-Models:
-(1) GB        (2) KNN    (3) LDA
-(4) LogReg    (5) MLP    (6) RF
-(7) SVM (recommended)    (8) XGB
-
-(x) Exit""",
-    ha="center", va="center", fontsize=11, family="monospace", linespacing=1.4,
-)
 
 def update(frame):
     with data_lock:
@@ -147,11 +160,18 @@ def update(frame):
             idx = i * num_rings + ring
             value = data[ring, i]
             global_wedges[idx].set_facecolor(global_cmap(value))
-            text_color = "black" if value < 0.5 else "white"
+            text_color = "white" if value > 0.65 else "#212529"
             global_texts[idx].set_text(f"{value:.2f}")
             global_texts[idx].set_color(text_color)
 
-    status_text.set_text(app.get_status())
+    # Format status cleanly
+    status = app.get_status()
+    status_lines = status.replace("[DeviceManager]: ", "").splitlines() if status else []
+    if not status_lines:
+        status_text.set_text("🟢 READY\nObject: None\nModel: None")
+    else:
+        status_text.set_text("🟢 ACTIVE\n" + "\n".join(status_lines))
+        status_text.set_bbox(dict(boxstyle="round,pad=0.6", facecolor="#cce5ff", edgecolor="#0056b3"))
 
 # ========= Controls =========
 def on_key(event):
@@ -173,7 +193,7 @@ def on_key(event):
         "d": lambda f: f.set_object("curc_d"),
         "e": lambda f: f.set_object("curc_e"),
         "f": lambda f: f.auto_calibration(gui_textbox("New object name: ") or "untitled", n=10),
-        "g": lambda f: f.set_object(gui_textbox("Set object to (prepend 'auto_cal_' for new objects): ") or "untitled"),
+        "g": lambda f: f.set_object(gui_textbox("Set object to: ") or "untitled"),
         "1": lambda f: f.set_model("gb"),
         "2": lambda f: f.set_model("knn"),
         "3": lambda f: f.set_model("lda"),
@@ -185,21 +205,20 @@ def on_key(event):
     }
 
     if key in key_actions:
-        pause_event.clear()  # 1. Tell data thread to stop immediately
+        pause_event.clear()
         try:
             print(f"[Main]: Key '{key}' pressed, executing action...")
-            status_text.set_text("[Main]: BUSY: Executing command...\n(Data collection paused)")
-            fig.canvas.draw_idle()  # Force UI update before long operation
+            status_text.set_text("⏳ BUSY\nExecuting command...\n(Data paused)")
+            status_text.set_bbox(dict(boxstyle="round,pad=0.6", facecolor="#fff3cd", edgecolor="#ffc107"))
+            fig.canvas.draw_idle()
 
-            # 2. Acquire hardware lock. Blocks until data thread finishes current read.
-            #    Guarantees app.run() cannot run during calibration/model switches.
             with hardware_lock:
                 key_actions[key](app)
                 
         except Exception as e:
             print(f"[Main]: Action '{key}' failed: {e}")
         finally:
-            pause_event.set()  # 3. Resume data thread
+            pause_event.set()
             fig.canvas.draw_idle()
 
 fig.canvas.mpl_connect("key_press_event", on_key)
