@@ -33,7 +33,8 @@ class DeviceManager:
         self.wavegen = None
         self.scope = None
 
-        resources = self.rm.list_resources()
+        # Filters out 'ASRL/dev/ttyS0::INSTR' serial issue
+        resources = self.rm.list_resources("USB?*::INSTR")
 
         # Probe devices and check for error
         if self._probe_instruments(resources) is False:
@@ -82,9 +83,7 @@ class DeviceManager:
     def _probe_instruments(self, resources):
         print("[DeviceManager]: Probing instruments...")
 
-        # Filters out 'ASRL/dev/ttyS0::INSTR' issue
-        filted_resources = tuple(filter(lambda s: not "tty" in s, resources))
-        for resource in filted_resources:
+        for resource in resources:
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
@@ -101,9 +100,8 @@ class DeviceManager:
     def _find_by_idn(self, resources, keyword):
         """Select wavegen and scope by keyword."""
         print(f"[DeviceManager]: Selecting {keyword} instruments:")
-        # Filters out 'ASRL/dev/ttyS0::INSTR' issue
-        filted_resources = tuple(filter(lambda s: not "tty" in s, resources))
-        for resource in filted_resources:
+
+        for resource in resources:
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
