@@ -79,11 +79,13 @@ class DeviceManager:
         except Exception as e:
             raise RuntimeError(f"[DeviceManager]: Error closing resource: {e}")
 
-    def _probe_instruments(self, instruments):
+    def _probe_instruments(self, resources):
         print("[DeviceManager]: Probing instruments...")
 
         # Filters out 'ASRL/dev/ttyS0::INSTR' issue
-        for resource in tuple(filter(lambda s: "tty" in s, instruments)):
+        filted_resources = tuple(filter(lambda s: "tty" in s, resources))
+        print(filted_resources)
+        for resource in filted_resources:
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
@@ -101,7 +103,9 @@ class DeviceManager:
         """Select wavegen and scope by keyword."""
         print(f"[DeviceManager]: Selecting {keyword} instruments:")
         # Filters out 'ASRL/dev/ttyS0::INSTR' issue
-        for resource in tuple(filter(lambda s: "tty" in s, resources)):
+        filted_resources = tuple(filter(lambda s: "tty" in s, resources))
+        print(filted_resources)
+        for resource in filted_resources:
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
