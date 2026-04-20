@@ -95,7 +95,7 @@ ax_right.set_facecolor("#f8f9fa")
 
 # Status Box
 status_text = ax_right.text(
-    0.5, 0.88, "🟢 READY\nObject: None\nModel: None",
+    0.5, 0.88, "  READY\nObject: None\nModel: None",
     ha="center", va="center", fontsize=11,
     bbox=dict(boxstyle="round,pad=0.6", facecolor="#d4edda", edgecolor="#28a745")
 )
@@ -103,17 +103,17 @@ status_text = ax_right.text(
 # Instructions Box
 ax_right.text(
     0.5, 0.42,
-    """🎯 OBJECTS
+    """  OBJECTS
   a-e : curc_a to curc_e
   f   : Auto-calibrate (5 min)
   g   : Custom object
 
-🤖 MODELS
+  MODELS
   1 : GB      2 : KNN    3 : LDA
   4 : LogReg  5 : MLP    6 : RF
   7 : SVM     8 : XGB
 
-🛑 x : Exit & Close""",
+  x : Exit & Close""",
     ha="center", va="center", fontsize=10, family="monospace", linespacing=1.7,
     bbox=dict(boxstyle="round,pad=0.8", facecolor="white", edgecolor="#ced4da", alpha=0.9)
 )
@@ -168,9 +168,9 @@ def update(frame):
     status = app.get_status()
     status_lines = status.replace("[DeviceManager]: ", "").splitlines() if status else []
     if not status_lines:
-        status_text.set_text("🟢 READY\nObject: None\nModel: None")
+        status_text.set_text("  READY\nObject: None\nModel: None")
     else:
-        status_text.set_text("🟢 ACTIVE\n" + "\n".join(status_lines))
+        status_text.set_text("  ACTIVE\n" + "\n".join(status_lines))
         status_text.set_bbox(dict(boxstyle="round,pad=0.6", facecolor="#cce5ff", edgecolor="#0056b3"))
 
 # ========= Controls =========
@@ -208,7 +208,7 @@ def on_key(event):
         pause_event.clear()
         try:
             print(f"[Main]: Key '{key}' pressed, executing action...")
-            status_text.set_text("⏳ BUSY\nExecuting command...\n(Data paused)")
+            status_text.set_text("  BUSY\nExecuting command...\n(Data paused)")
             status_text.set_bbox(dict(boxstyle="round,pad=0.6", facecolor="#fff3cd", edgecolor="#ffc107"))
             fig.canvas.draw_idle()
 
