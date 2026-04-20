@@ -44,13 +44,21 @@ hardware_lock = threading.Lock()  # Absolute hardware mutex
 def data_loop():
     global latest_data
     while not stop_event.is_set():
-        pause_event.wait()
-        
+        # Use timeout to periodically check stop_event without blocking indefinitely
+        if not pause_event.wait(timeout=0.1):
+            continue  # Still paused
+            
+        if stop_event.is_set():
+            break
+            
         acquired = hardware_lock.acquire(timeout=0.1)
         if not acquired:
             continue
             
         try:
+            # Final safety check before acquiring new data
+            if stop_event.is_set():
+                break
             data = app.run()
             with data_lock:
                 latest_data = data.copy()
@@ -59,6 +67,9 @@ def data_loop():
             sleep(1)
         finally:
             hardware_lock.release()
+            
+        if stop_event.is_set():
+            break
         sleep(0.05)
 
 thread = threading.Thread(target=data_loop, daemon=True)
@@ -156,19 +167,35 @@ def update(frame):
         data = latest_data.copy()
     data = np.clip(data, 0, 1)
 
+    # Box around highest probability value
+    max_row, max_col = np.unravel_index(np.argmax(data), data.shape)
+    max_text_idx = max_col * num_rings + max_row
+
     for i in range(num_slices):
         for ring in range(num_rings):
             idx = i * num_rings + ring
             value = data[ring, i]
             global_wedges[idx].set_facecolor(global_cmap(value))
 
-            # Calculate perceived luminance of the wedge background (standard ITU-R BT.601)
             rgb = global_cmap(value)[:3]
             luminance = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]
             text_color = "white" if luminance < 0.5 else "#212529"
 
             global_texts[idx].set_text(f"{value:.2f}")
             global_texts[idx].set_color(text_color)
+
+            # Clear any existing box
+            global_texts[idx].set_bbox(None)
+
+            # Apply box to the highest probability text
+            if idx == max_text_idx:
+                global_texts[idx].set_bbox(dict(
+                    boxstyle="round,pad=0.3",
+                    facecolor="gold",
+                    edgecolor="red",
+                    lw=2,
+                    alpha=0.8
+                ))
 
     # Format status cleanly
     status_lines = app.get_status()
@@ -185,7 +212,7 @@ def on_key(event):
 
     if key == "x":
         print("[Main]: Exiting...")
-        stop_event.set()
+        stop_event.set()  # Signal thread to stop immediately
         app.close()
         thread.join(timeout=2)
         plt.close(fig)
