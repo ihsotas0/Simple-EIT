@@ -173,7 +173,7 @@ class DeviceManager:
 # ========= Testing =========
 
 def basic_device_test():
-    with DeviceManager(wavegen_idn='EDU33212A', scope_idn='EDU-X') as dm:
+    with DeviceManager(wavegen_idn='EDU33212A', scope_idn='DSOX1202A') as dm:
 
         for i in range(25):
             voltage = dm.get_voltage()
