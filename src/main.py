@@ -1,6 +1,5 @@
 import threading
 from time import sleep
-
 import tkinter as tk
 from tkinter import simpledialog
 
@@ -14,9 +13,8 @@ from simple_eit import SimpleEIT
 
 print("[Main]: Running full Simple EIT...")
 
-# Default colormap
-global_cmap = colormaps["binary"]
-
+# Use a more visible colormap initially. 'binary' maps 0->white, which is invisible on white backgrounds.
+global_cmap = colormaps["viridis"] 
 
 def gui_textbox(prompt):
     root = tk.Tk()
@@ -27,23 +25,22 @@ def gui_textbox(prompt):
     finally:
         root.destroy()
 
-
 # ========= EIT data thread =========
 app = SimpleEIT(
     scope_idn=gui_textbox("Identify oscilloscope: "),
     wavegen_idn=gui_textbox("Identify wavegen: "),
 )
 
-latest_data = np.zeros((2, 8))
+latest_data = 0.5 * np.ones((2, 8))  # Start with mid-values so shapes are visible immediately
 data_lock = threading.Lock()
 stop_event = threading.Event()
 pause_event = threading.Event()
-
+pause_event.set()  # Start in RUNNING state
 
 def data_loop():
     global latest_data
     while not stop_event.is_set():
-        pause_event.wait()
+        pause_event.wait()  # Blocks only when pause_event is cleared
         try:
             data = app.run()
             with data_lock:
@@ -51,13 +48,13 @@ def data_loop():
         except Exception as e:
             print(f"[Main]: Data acquisition failed: {e}")
             sleep(1)
-
+        sleep(0.05)  # Prevent 100% CPU usage while waiting
 
 thread = threading.Thread(target=data_loop, daemon=True)
 thread.start()
 
 # ========= Display setup =========
-fig = plt.figure(figsize=(10, 8))
+fig = plt.figure(figsize=(10, 8), facecolor="lightgray")
 fig.subplots_adjust(wspace=0.25, left=0.05, right=0.98, top=0.90, bottom=0.05)
 gs = fig.add_gridspec(1, 2, width_ratios=[2, 1])
 
@@ -67,13 +64,15 @@ ax_right = fig.add_subplot(gs[0, 1])
 ax_left.set_title("Simple EIT Display", pad=16, fontsize=13, fontweight="bold")
 ax_right.set_title("Controls and Status", pad=16, fontsize=13, fontweight="bold")
 
-# Configure axes once
-ax_left.axis("equal")
+# FIX: Explicit limits prevent clipping of outer labels and wedges
+ax_left.set_xlim(-1.25, 1.25)
+ax_left.set_ylim(-1.25, 1.25)
 ax_left.axis("off")
+ax_left.set_facecolor("white")
 ax_right.axis("off")
 
 # Labels
-label_radius = 1.1
+label_radius = 1.15
 for label, (x, y) in zip(
     ["A", "B", "C", "D"],
     [(0, label_radius), (label_radius, 0), (0, -label_radius), (-label_radius, 0)],
@@ -100,18 +99,17 @@ for i in range(num_slices):
             r=radius,
             theta1=np.degrees(start_angle),
             theta2=np.degrees(start_angle + theta),
-            facecolor=global_cmap(0),
-            lw=0,
+            facecolor=global_cmap(0.5),
+            lw=1,
+            edgecolor="gray",
         )
         ax_left.add_patch(global_wedges[idx])
 
         text_radius = (r_outer + r_inner) / 2 if ring == 0 else (r_inner + 0.1) / 2
         text_angle = start_angle + theta / 2
-        x_txt, y_txt = text_radius * np.cos(text_angle), text_radius * np.sin(
-            text_angle
-        )
+        x_txt, y_txt = text_radius * np.cos(text_angle), text_radius * np.sin(text_angle)
         global_texts[idx] = ax_left.text(
-            x_txt, y_txt, "0.00", ha="center", va="center", fontsize=8
+            x_txt, y_txt, "0.50", ha="center", va="center", fontsize=8, fontweight="bold"
         )
 
 # Status text
@@ -148,10 +146,12 @@ Models:
     linespacing=1.4,
 )
 
-
 def update(frame):
     with data_lock:
         data = latest_data.copy()
+
+    # Clamp values to [0, 1] for safe colormap indexing
+    data = np.clip(data, 0, 1)
 
     for i in range(num_slices):
         for ring in range(num_rings):
@@ -163,8 +163,6 @@ def update(frame):
             global_texts[idx].set_color(text_color)
 
     status_text.set_text(app.get_status())
-    return global_wedges + global_texts + [status_text]
-
 
 # ========= Controls =========
 def on_key(event):
@@ -186,9 +184,7 @@ def on_key(event):
         "c": lambda f: f.set_object("curc_c"),
         "d": lambda f: f.set_object("curc_d"),
         "e": lambda f: f.set_object("curc_e"),
-        "f": lambda f: f.auto_calibration(
-            gui_textbox("New object name: ") or "untitled", n=10
-        ),
+        "f": lambda f: f.auto_calibration(gui_textbox("New object name: ") or "untitled", n=10),
         "g": lambda f: f.set_object(gui_textbox("Set object to (prepend 'auto_cal_' for new objects): ") or "untitled"),
         "1": lambda f: f.set_model("gb"),
         "2": lambda f: f.set_model("knn"),
@@ -201,18 +197,19 @@ def on_key(event):
     }
 
     if key in key_actions:
-        pause_event.set()
+        pause_event.clear()  # PAUSE acquisition before changing state
         try:
             print(f"[Main]: Key '{key}' pressed, executing action...")
             key_actions[key](app)
         except Exception as e:
             print(f"[Main]: Action '{key}' failed: {e}")
         finally:
-            pause_event.clear()
-
+            pause_event.set()  # RESUME acquisition
 
 fig.canvas.mpl_connect("key_press_event", on_key)
 
 # ========= Start =========
+# Force initial render so shapes/text appear before first animation frame
+fig.canvas.draw()
 ani = FuncAnimation(fig, update, interval=100, blit=False, cache_frame_data=False)
 plt.show()

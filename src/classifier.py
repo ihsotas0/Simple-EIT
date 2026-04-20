@@ -230,7 +230,7 @@ class Classifier:
             },
         }
         joblib.dump(payload, cache_path)
-        print(f"Cache saved at {cache_path}")
+        print(f"[Classifier]: Cache saved at {cache_path}")
 
     # ========= Inference =========
 
