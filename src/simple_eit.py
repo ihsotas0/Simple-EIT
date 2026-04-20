@@ -22,6 +22,10 @@ DEFAULT_MUX1_PINS = (19, 26)
 DEFAULT_MUX2_PINS = (6, 13)
 DEFAULT_MUX_TOGGLE_PINS = (5, 16)
 
+# Auto-cal HACK
+DATA_DIR = Path("..") / "data"
+
+
 class SimpleEIT:
     """Wrapper for Simple EIT instrument control."""
 
@@ -164,64 +168,55 @@ class SimpleEIT:
                 mux[0].on()
                 mux[1].on()
 
-# ========= Constants =========
+    # ========= Helper functions =========
 
-DATA_DIR = Path("..") / "data"
-FREQUENCIES = (1_000, 5_000, 10_000, 20_000)
-INSTRUMENT_N = 1000
-OBJECT_N = 200
+    @staticmethod
+    def _write_header_if_empty(file_obj, writer, header):
+        if file_obj.tell() == 0:
+            writer.writerow(header)
 
-# ========= Helper functions =========
+    @staticmethod
+    def _timestamp():
+        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    # ========= EIT data collection scripts (hack because of circular import, TODO: fix) =========
 
-def _write_header_if_empty(file_obj, writer, header):
-    if file_obj.tell() == 0:
-        writer.writerow(header)
+    def object_data(self, object_name, n=10):
+        print(f"[DataCollector]: Getting data for {object_name}...")
 
+        if not object_name:
+            raise RuntimeError("[DataCollector]: Object name cannot be empty!")
 
-def _timestamp():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        csv_path = DATA_DIR / f"{object_name}_data.csv"
 
+        header = [
+            "Timestamp",
+            "Location",
+            "V_AB",
+            "V_AD",
+            "V_BC",
+            "V_CD",
+            "V_AC",
+            "V_BD",
+        ]
 
-# ========= EIT data collection scripts (hack because of circular import, TODO: fix) =========
+        locations = [
+            f"{pair}_{i}" for pair in ("AB", "AD", "BC", "CD") for i in range(1, 5)
+        ]
 
-def object_data(object_name, n=OBJECT_N):
-    print(f"[DataCollector]: Getting data for {object_name}...")
+        with csv_path.open(mode="a", newline="") as f:
+            writer = csv.writer(f)
+            self._write_header_if_empty(f, writer, header)
 
-    if not object_name:
-        raise RuntimeError("[DataCollector]: Object name cannot be empty!")
+            for location in locations:
+                print(f"[DataCollector]: Move {object_name} to: {location}")
+                input("[DataCollector]: Press enter when ready...")
 
-    app = SimpleEIT()
-    csv_path = DATA_DIR / f"{object_name}_data.csv"
+                for i in range(n):
+                    print(
+                        f"[DataCollector]: Location: {location}, Measurement: {i + 1}/{n}"
+                    )
+                    values = self.run(return_raw=True)
+                    writer.writerow([self._timestamp(), location, *values])
 
-    header = [
-        "Timestamp",
-        "Location",
-        "V_AB",
-        "V_AD",
-        "V_BC",
-        "V_CD",
-        "V_AC",
-        "V_BD",
-    ]
-
-    locations = [
-        f"{pair}_{i}" for pair in ("AB", "AD", "BC", "CD") for i in range(1, 5)
-    ]
-
-    with csv_path.open(mode="a", newline="") as f:
-        writer = csv.writer(f)
-        _write_header_if_empty(f, writer, header)
-
-        for location in locations:
-            print(f"[DataCollector]: Move {object_name} to: {location}")
-            input("[DataCollector]: Press enter when ready...")
-
-            for i in range(n):
-                print(
-                    f"[DataCollector]: Location: {location}, Measurement: {i + 1}/{n}"
-                )
-                values = app.run(return_raw=True)
-                writer.writerow([_timestamp(), location, *values])
-
-            print("[DataCollector]: Done, next location!")
+                print("[DataCollector]: Done, next location!")
