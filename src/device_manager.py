@@ -37,8 +37,8 @@ class DeviceManager:
         resources = self.rm.list_resources("USB?*::INSTR")
 
         # Probe devices and check for error
-        #if self._probe_instruments(resources) is False:
-        #    raise RuntimeError("[DeviceManager]: Can't probe devices!")
+        if self._probe_instruments(resources) is False:
+           raise RuntimeError("[DeviceManager]: Can't probe devices!")
 
         # Select devices
         self.scope = self._find_by_idn(resources, scope_idn)
@@ -87,10 +87,10 @@ class DeviceManager:
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
+                self._close_resource(inst)
                 print("[DeviceManager]: Found instrument.")
                 print(f"-> Resource: {resource}")
                 print(f"-> IDN: {idn.strip()}")
-                self._close_resource(inst)
             except Exception as e:
                 print(f"[DeviceManager]: Probe failed for {resource}: {e}")
                 return False
