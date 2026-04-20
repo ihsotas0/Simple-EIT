@@ -13,7 +13,7 @@ SCOPE_COMMAND_LIST = [
 # Models trained on these parameters
 WAVEGEN_COMMAND_LIST = ["APPL:SIN 10e3,2.5,2.5"]
 
-DEFAULT_TIMEOUT = 5000 # ms
+DEFAULT_TIMEOUT = 5000  # ms
 
 class DeviceManager:
     """Encapsulates PyVISA for easy, error reporting instrument management."""
@@ -36,18 +36,16 @@ class DeviceManager:
         # Filters out 'ASRL/dev/ttyS0::INSTR' serial issue
         resources = self.rm.list_resources("USB?*::INSTR")
 
-        # Probe devices and check for error
-        if self._probe_instruments(resources) is False:
-           raise RuntimeError("[DeviceManager]: Can't probe devices!")
+        # Probe devices
+        if not self._probe_instruments(resources):
+            raise RuntimeError("[DeviceManager]: Can't probe devices!")
 
         # Select devices
         self.scope = self._find_by_idn(resources, scope_idn)
         self.wavegen = self._find_by_idn(resources, wavegen_idn)
 
-        if self.scope is False or self.wavegen is False:
-            raise RuntimeError(
-                "[DeviceManager]: Could not identify required instruments!"
-            )
+        if self.scope is None or self.wavegen is None:
+            raise RuntimeError("[DeviceManager]: Could not identify required instruments!")
 
         # Setup devices
         self.setup_device(self.scope, scope_timeout, scope_commands)
@@ -68,33 +66,36 @@ class DeviceManager:
         print("[DeviceManager]: Closing device connections...")
         self._close_resource(self.wavegen)
         self._close_resource(self.scope)
-        self._close_resource(self.rm)
+        # ResourceManager self-cleans; explicit close is optional but safe here
+        try:
+            self.rm.close()
+        except Exception:
+            pass
         print("Done!")
 
     # ========= Helper functions =========
 
     def _close_resource(self, resource):
         try:
-            if resource:
+            if resource is not None:
                 resource.close()
         except Exception as e:
-            raise RuntimeError(f"[DeviceManager]: Error closing resource: {e}")
+            print(f"[DeviceManager]: Warning closing resource: {e}")
 
     def _probe_instruments(self, resources):
         print("[DeviceManager]: Probing instruments...")
-
         for resource in resources:
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
-                self._close_resource(inst)
+                inst.close()
                 print("[DeviceManager]: Found instrument.")
                 print(f"-> Resource: {resource}")
                 print(f"-> IDN: {idn.strip()}")
             except Exception as e:
+                # Continue probing instead of failing on the first unresponsive device
                 print(f"[DeviceManager]: Probe failed for {resource}: {e}")
-                return False
-
+                continue
         return True
 
     def _find_by_idn(self, resources, keyword):
@@ -102,6 +103,12 @@ class DeviceManager:
         print(f"[DeviceManager]: Selecting {keyword} instruments:")
 
         for resource in resources:
+            # SKIP already opened/assigned devices to prevent "Resource busy"
+            if self.scope is not None and self.scope.resource_name == resource:
+                continue
+            if self.wavegen is not None and self.wavegen.resource_name == resource:
+                continue
+
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
@@ -109,13 +116,15 @@ class DeviceManager:
                     print(f"-> Selected resource: {resource}")
                     print(f"-> IDN: {idn.strip()}")
                     return inst
-                else: inst.close()
+                else:
+                    inst.close()
             except Exception as e:
-                print(f"[DeviceManager]: Device selection failed for {resource}: {e}")
-                return False
+                # LOG and CONTINUE instead of returning False immediately
+                print(f"[DeviceManager]: Skipping {resource}: {e}")
+                continue
 
-        # No devices returned, so return False to raise error in __init__
-        return False
+        print(f"[DeviceManager]: No device found matching '{keyword}'")
+        return None
 
     # ========= Device setup and control =========
 
@@ -125,7 +134,6 @@ class DeviceManager:
             device.timeout = timeout
             for command in command_list:
                 device.write(command)
-
         except Exception as e:
             raise RuntimeError(f"[DeviceManager]: Failed to configure device: {e}")
 
@@ -134,39 +142,29 @@ class DeviceManager:
         command = f"APPL:SIN {freq},2.5,2.5"
         try:
             self.wavegen.write(command)
-
         except Exception as e:
-            raise RuntimeError(
-                f"[DeviceManager]: Failed to change wavegen frequency: {e}"
-            )
+            raise RuntimeError(f"[DeviceManager]: Failed to change wavegen frequency: {e}")
 
     def change_measurement_time(self, div):
         """Change time scale of scope to change single capture time."""
         command = f":TIM:SCAL {div}"
         try:
             self.scope.write(command)
-
         except Exception as e:
-            raise RuntimeError(
-                f"[DeviceManager]: Failed to change scope time scale: {e}"
-            )
+            raise RuntimeError(f"[DeviceManager]: Failed to change scope time scale: {e}")
 
     # ========= Main output of DeviceManager =========
 
     def get_voltage(self):
         """Records scope RMS voltage over single capture."""
         try:
-
             # Trigger a fresh acquisition (fast single capture)
             self.scope.write(":DIG")
-
             # Wait until acquisition completes
             self.scope.query("*OPC?")
-
             # Query RMS voltage directly from scope
             rms_value = float(self.scope.query(":MEAS:VRMS? CHAN1"))
             return rms_value
-
         except Exception as e:
             raise RuntimeError(f"[DeviceManager]: Voltage read failed: {e}")
 
@@ -175,7 +173,6 @@ class DeviceManager:
 
 def basic_device_test():
     with DeviceManager(wavegen_idn='EDU33212A', scope_idn='DSOX1202A') as dm:
-
         for i in range(25):
             voltage = dm.get_voltage()
             print(f"Test {i}: {voltage}")
