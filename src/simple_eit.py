@@ -11,7 +11,7 @@ from device_manager import DeviceManager
 
 # To ensure classifier is initialized correctly
 DEFAULT_OBJECT = "curc_a"
-DEFAULT_MODEL = "svm"
+DEFAULT_MODEL = "rf"
 
 # Default scope and wavegen identifiers
 DEFAULT_SCOPE_IDN = "KEYSIGHT"

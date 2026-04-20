@@ -103,21 +103,22 @@ status_text = ax_right.text(
 # Instructions Box
 ax_right.text(
     0.5, 0.42,
-    """  OBJECTS
+    """  CONTROLS
+  
+  OBJECTS
   a-e : curc_a to curc_e
   f   : Auto-calibrate (5 min)
   g   : Custom object
-
+  
   MODELS
-  1 : GB      2 : KNN    3 : LDA
-  4 : LogReg  5 : MLP    6 : RF
+  1 : GB      2 : KNN     3 : LDA
+  4 : LogReg  5 : MLP     6 : RF
   7 : SVM     8 : XGB
-
-  x : Exit & Close""",
-    ha="center", va="center", fontsize=10, family="monospace", linespacing=1.7,
-    bbox=dict(boxstyle="round,pad=0.8", facecolor="white", edgecolor="#ced4da", alpha=0.9)
+  
+  x   : Exit""",
+    ha="center", va="center", fontsize=9, family="monospace", linespacing=1.5,
+    bbox=dict(boxstyle="round,pad=0.6", facecolor="#ffffff", edgecolor="#ced4da", alpha=0.95)
 )
-
 # Geometry & Wedges
 num_slices, num_rings = 8, 2
 theta = 2 * np.pi / num_slices
@@ -160,7 +161,12 @@ def update(frame):
             idx = i * num_rings + ring
             value = data[ring, i]
             global_wedges[idx].set_facecolor(global_cmap(value))
-            text_color = "white" if value > 0.65 else "#212529"
+
+            # Calculate perceived luminance of the wedge background (standard ITU-R BT.601)
+            rgb = global_cmap(value)[:3]
+            luminance = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]
+            text_color = "white" if luminance < 0.5 else "#212529"
+
             global_texts[idx].set_text(f"{value:.2f}")
             global_texts[idx].set_color(text_color)
 
