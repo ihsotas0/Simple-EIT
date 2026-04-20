@@ -68,7 +68,7 @@ class SimpleEIT:
         new_obj_name = "auto_cal_" + object_name
 
         # n < 200 measurements per location, fast enough for real-time demo
-        object_data(new_obj_name, n=n)
+        self.object_data(new_obj_name, n=n)
 
         self.set_object(new_obj_name)
 
