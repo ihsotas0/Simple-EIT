@@ -191,7 +191,7 @@ class SimpleEIT:
 
         header = [
             "Timestamp",
-            "Location",
+            "Label",
             "V_AB",
             "V_AD",
             "V_BC",

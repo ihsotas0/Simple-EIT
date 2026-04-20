@@ -66,7 +66,7 @@ def object_data(object_name, n=OBJECT_N):
 
     header = [
         "Timestamp",
-        "Location",
+        "Label",
         "V_AB",
         "V_AD",
         "V_BC",
