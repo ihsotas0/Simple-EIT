@@ -109,6 +109,7 @@ class DeviceManager:
                     print(f"-> Selected resource: {resource}")
                     print(f"-> IDN: {idn.strip()}")
                     return inst
+                else: inst.close()
             except Exception as e:
                 print(f"[DeviceManager]: Device selection failed for {resource}: {e}")
                 return False
