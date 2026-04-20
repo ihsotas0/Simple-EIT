@@ -95,28 +95,28 @@ ax_right.set_facecolor("#f8f9fa")
 
 # Status Box
 status_text = ax_right.text(
-    0.5, 0.88, "  READY\nObject: None\nModel: None",
-    ha="center", va="center", fontsize=11,
+    0.5, 0.88, "READY\nObject: None\nModel: None",
+    ha="center", va="center", fontsize=25,
     bbox=dict(boxstyle="round,pad=0.6", facecolor="#d4edda", edgecolor="#28a745")
 )
 
 # Instructions Box
 ax_right.text(
     0.5, 0.42,
-    """  CONTROLS
-  
-  OBJECTS
-  a-e : curc_a to curc_e
-  f   : Auto-calibrate (5 min)
-  g   : Custom object
-  
-  MODELS
-  1 : GB      2 : KNN     3 : LDA
-  4 : LogReg  5 : MLP     6 : RF
-  7 : SVM     8 : XGB
-  
-  x   : Exit""",
-    ha="center", va="center", fontsize=9, family="monospace", linespacing=1.5,
+    """CONTROLS
+
+OBJECTS
+a-e: curc_a to curc_e
+f: Auto-calibrate new object (<5 min)
+g: Load custom object
+
+MODELS
+1: GB      2: KNN     3: LDA
+4: LogReg  5: MLP     6: RF
+7: SVM     8: XGB
+
+x: EXIT""",
+    ha="center", va="center", fontsize=20, family="monospace", linespacing=1.5,
     bbox=dict(boxstyle="round,pad=0.6", facecolor="#ffffff", edgecolor="#ced4da", alpha=0.95)
 )
 # Geometry & Wedges
@@ -171,12 +171,11 @@ def update(frame):
             global_texts[idx].set_color(text_color)
 
     # Format status cleanly
-    status = app.get_status()
-    status_lines = status.replace("[DeviceManager]: ", "").splitlines() if status else []
+    status_lines = app.get_status()
     if not status_lines:
-        status_text.set_text("  READY\nObject: None\nModel: None")
+        status_text.set_text("READY\nObject: None\nModel: None")
     else:
-        status_text.set_text("  ACTIVE\n" + "\n".join(status_lines))
+        status_text.set_text("ACTIVE\n" + "\n".join(status_lines))
         status_text.set_bbox(dict(boxstyle="round,pad=0.6", facecolor="#cce5ff", edgecolor="#0056b3"))
 
 # ========= Controls =========
