@@ -1,6 +1,6 @@
 Finish final report
 Finish README
-Double-check requirements.txt
+Fix requirements.txt
 Clean up visualization.py
 
 Implement config.yaml for all constants

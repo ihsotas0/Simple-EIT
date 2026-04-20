@@ -1,9 +1,13 @@
+import csv
+from datetime import datetime
+from pathlib import Path
+
 import numpy as np
 from gpiozero import LED
 
-from device_manager import DeviceManager
+# import data_collector as dc  # For autocalibration
 from classifier import Classifier
-from data_collector import object_data  # For autocalibration
+from device_manager import DeviceManager
 
 # To ensure classifier is initialized correctly
 DEFAULT_OBJECT = "curc_a"
@@ -17,7 +21,6 @@ DEFAULT_WAVEGEN_IDN = "AGILENT"
 DEFAULT_MUX1_PINS = (19, 26)
 DEFAULT_MUX2_PINS = (6, 13)
 DEFAULT_MUX_TOGGLE_PINS = (5, 16)
-
 
 class SimpleEIT:
     """Wrapper for Simple EIT instrument control."""
@@ -161,3 +164,125 @@ class SimpleEIT:
             case 4:
                 mux[0].on()
                 mux[1].on()
+
+# ========= Constants =========
+
+DATA_DIR = Path("..") / "data"
+FREQUENCIES = (1_000, 5_000, 10_000, 20_000)
+INSTRUMENT_N = 1000
+OBJECT_N = 200
+
+# ========= Helper functions =========
+
+
+def _write_header_if_empty(file_obj, writer, header):
+    if file_obj.tell() == 0:
+        writer.writerow(header)
+
+
+def _timestamp():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+# ========= EIT data collection scripts =========
+
+
+def instrument_data(n=INSTRUMENT_N):
+    print(f"[DataCollector]: Getting instrument data at different frequencies...")
+
+    app = SimpleEIT()
+    csv_path = DATA_DIR / "instrument_data.csv"
+
+    header = [
+        "Timestamp",
+        "Frequency (Hz)",
+        "V_AB",
+        "V_AD",
+        "V_BC",
+        "V_CD",
+        "V_AC",
+        "V_BD",
+    ]
+
+    with csv_path.open(mode="a", newline="") as f:
+        writer = csv.writer(f)
+        _write_header_if_empty(f, writer, header)
+
+        for freq in FREQUENCIES:
+            for _ in range(n):
+                # Use DeviceManager to change frequency
+                app.dm.change_frequency(freq)
+                values = app.run(return_raw=True)
+                writer.writerow([_timestamp(), freq, *values])
+
+
+def object_data(object_name, n=OBJECT_N):
+    print(f"[DataCollector]: Getting data for {object_name}...")
+
+    if not object_name:
+        raise RuntimeError("[DataCollector]: Object name cannot be empty!")
+
+    app = SimpleEIT()
+    csv_path = DATA_DIR / f"{object_name}_data.csv"
+
+    header = [
+        "Timestamp",
+        "Location",
+        "V_AB",
+        "V_AD",
+        "V_BC",
+        "V_CD",
+        "V_AC",
+        "V_BD",
+    ]
+
+    locations = [
+        f"{pair}_{i}" for pair in ("AB", "AD", "BC", "CD") for i in range(1, 5)
+    ]
+
+    with csv_path.open(mode="a", newline="") as f:
+        writer = csv.writer(f)
+        _write_header_if_empty(f, writer, header)
+
+        for location in locations:
+            print(f"[DataCollector]: Move {object_name} to: {location}")
+            input("[DataCollector]: Press enter when ready...")
+
+            for i in range(n):
+                print(
+                    f"[DataCollector]: Location: {location}, Measurement: {i + 1}/{n}"
+                )
+                values = app.run(return_raw=True)
+                writer.writerow([_timestamp(), location, *values])
+
+            print("[DataCollector]: Done, next location!")
+
+
+# ========= Main =========
+
+
+def main():
+    print("[DataCollector]: Running data collection script...")
+    choice = (
+        input("[DataCollector]: Data to collect [Instrument: i, Object: o]: ")
+        .strip()
+        .upper()
+    )
+
+    if choice == "I":
+        instrument_data()
+    elif choice == "O":
+        object_name = input("[DataCollector]: Object name: ").strip()
+        object_data(object_name)
+    else:
+        raise RuntimeError("[DataCollector]: Unknown input!")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except RuntimeError as e:
+        print(f"[DataCollector]: Expected error: {e}")
+    except Exception as e:
+        print(f"[DataCollector]: Unexpected error: {e}")
+
