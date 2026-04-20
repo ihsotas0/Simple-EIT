@@ -83,8 +83,7 @@ class DeviceManager:
         print("[DeviceManager]: Probing instruments...")
 
         # Filters out 'ASRL/dev/ttyS0::INSTR' issue
-        filted_resources = tuple(filter(lambda s: "tty" in s, resources))
-        print(filted_resources)
+        filted_resources = tuple(filter(lambda s: not "tty" in s, resources))
         for resource in filted_resources:
             try:
                 inst = self.rm.open_resource(resource)
@@ -103,8 +102,7 @@ class DeviceManager:
         """Select wavegen and scope by keyword."""
         print(f"[DeviceManager]: Selecting {keyword} instruments:")
         # Filters out 'ASRL/dev/ttyS0::INSTR' issue
-        filted_resources = tuple(filter(lambda s: "tty" in s, resources))
-        print(filted_resources)
+        filted_resources = tuple(filter(lambda s: not "tty" in s, resources))
         for resource in filted_resources:
             try:
                 inst = self.rm.open_resource(resource)
