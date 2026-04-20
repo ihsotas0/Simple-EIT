@@ -12,9 +12,7 @@ from matplotlib.patches import Wedge
 from simple_eit import SimpleEIT
 
 print("[Main]: Running full Simple EIT...")
-
-# Use a more visible colormap initially. 'binary' maps 0->white, which is invisible on white backgrounds.
-global_cmap = colormaps["viridis"] 
+global_cmap = colormaps["viridis"]  # Visible from 0.0
 
 def gui_textbox(prompt):
     root = tk.Tk()
@@ -31,16 +29,23 @@ app = SimpleEIT(
     wavegen_idn=gui_textbox("Identify wavegen: "),
 )
 
-latest_data = 0.5 * np.ones((2, 8))  # Start with mid-values so shapes are visible immediately
+latest_data = 0.5 * np.ones((2, 8))
 data_lock = threading.Lock()
 stop_event = threading.Event()
 pause_event = threading.Event()
 pause_event.set()  # Start in RUNNING state
+hardware_lock = threading.Lock()  # NEW: Absolute hardware mutex
 
 def data_loop():
     global latest_data
     while not stop_event.is_set():
-        pause_event.wait()  # Blocks only when pause_event is cleared
+        pause_event.wait()  # Blocks immediately when cleared
+        
+        # Acquire hardware lock. Blocks if calibration holds it.
+        acquired = hardware_lock.acquire(timeout=0.1)
+        if not acquired:
+            continue  # Calibration running, skip this cycle
+            
         try:
             data = app.run()
             with data_lock:
@@ -48,7 +53,9 @@ def data_loop():
         except Exception as e:
             print(f"[Main]: Data acquisition failed: {e}")
             sleep(1)
-        sleep(0.05)  # Prevent 100% CPU usage while waiting
+        finally:
+            hardware_lock.release()
+        sleep(0.05)
 
 thread = threading.Thread(target=data_loop, daemon=True)
 thread.start()
@@ -64,14 +71,12 @@ ax_right = fig.add_subplot(gs[0, 1])
 ax_left.set_title("Simple EIT Display", pad=16, fontsize=13, fontweight="bold")
 ax_right.set_title("Controls and Status", pad=16, fontsize=13, fontweight="bold")
 
-# FIX: Explicit limits prevent clipping of outer labels and wedges
 ax_left.set_xlim(-1.25, 1.25)
 ax_left.set_ylim(-1.25, 1.25)
 ax_left.axis("off")
 ax_left.set_facecolor("white")
 ax_right.axis("off")
 
-# Labels
 label_radius = 1.15
 for label, (x, y) in zip(
     ["A", "B", "C", "D"],
@@ -79,13 +84,11 @@ for label, (x, y) in zip(
 ):
     ax_left.text(x, y, label, ha="center", va="center", fontsize=12, fontweight="bold")
 
-# Geometry
 num_slices, num_rings = 8, 2
 theta = 2 * np.pi / num_slices
 r_outer = 1.0
 r_inner = r_outer / np.sqrt(2)
 
-# Pre-create artists
 global_wedges = [None] * (num_slices * num_rings)
 global_texts = [None] * (num_slices * num_rings)
 
@@ -112,22 +115,14 @@ for i in range(num_slices):
             x_txt, y_txt, "0.50", ha="center", va="center", fontsize=8, fontweight="bold"
         )
 
-# Status text
 status_text = ax_right.text(
-    0.5,
-    0.88,
-    "object = \nmodel = ",
-    ha="center",
-    va="center",
-    fontsize=12,
-    fontweight="bold",
+    0.5, 0.88, "object = \nmodel = ",
+    ha="center", va="center", fontsize=12, fontweight="bold",
     bbox=dict(boxstyle="round,pad=0.4", facecolor="whitesmoke", edgecolor="gray"),
 )
 
-# Instructions
 ax_right.text(
-    0.5,
-    0.45,
+    0.5, 0.45,
     """Objects:
 (a-e) curc_a to curc_e
 (f) Run auto-calibration of new object
@@ -139,18 +134,12 @@ Models:
 (7) SVM (recommended)    (8) XGB
 
 (x) Exit""",
-    ha="center",
-    va="center",
-    fontsize=11,
-    family="monospace",
-    linespacing=1.4,
+    ha="center", va="center", fontsize=11, family="monospace", linespacing=1.4,
 )
 
 def update(frame):
     with data_lock:
         data = latest_data.copy()
-
-    # Clamp values to [0, 1] for safe colormap indexing
     data = np.clip(data, 0, 1)
 
     for i in range(num_slices):
@@ -167,8 +156,7 @@ def update(frame):
 # ========= Controls =========
 def on_key(event):
     key = event.key
-    if not key:
-        return
+    if not key: return
 
     if key == "x":
         print("[Main]: Exiting...")
@@ -197,19 +185,24 @@ def on_key(event):
     }
 
     if key in key_actions:
-        pause_event.clear()  # PAUSE acquisition before changing state
+        pause_event.clear()  # 1. Tell data thread to stop immediately
         try:
             print(f"[Main]: Key '{key}' pressed, executing action...")
-            key_actions[key](app)
+            status_text.set_text("[Main]: BUSY: Executing command...\n(Data collection paused)")
+            fig.canvas.draw_idle()  # Force UI update before long operation
+
+            # 2. Acquire hardware lock. Blocks until data thread finishes current read.
+            #    Guarantees app.run() cannot run during calibration/model switches.
+            with hardware_lock:
+                key_actions[key](app)
+                
         except Exception as e:
             print(f"[Main]: Action '{key}' failed: {e}")
         finally:
-            pause_event.set()  # RESUME acquisition
+            pause_event.set()  # 3. Resume data thread
+            fig.canvas.draw_idle()
 
 fig.canvas.mpl_connect("key_press_event", on_key)
-
-# ========= Start =========
-# Force initial render so shapes/text appear before first animation frame
 fig.canvas.draw()
 ani = FuncAnimation(fig, update, interval=100, blit=False, cache_frame_data=False)
 plt.show()

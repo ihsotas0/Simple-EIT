@@ -132,7 +132,6 @@ class SimpleEIT:
             # [AB_1, AB_2, AD_1, AD_2, CD_1, CD_2, BC_1, BC_2]
             # [AB_3, AB_4, AD_3, AD_4, CD_3, CD_4, BC_3, BC_4]
             prediction = self.classifier.predict(v_raw)
-            print(f"[SimpleEIT]: Prediction matrix: {prediction}")
             return prediction
 
     # ========= Context manager =========
@@ -184,37 +183,7 @@ def _timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-# ========= EIT data collection scripts =========
-
-
-def instrument_data(n=INSTRUMENT_N):
-    print(f"[DataCollector]: Getting instrument data at different frequencies...")
-
-    app = SimpleEIT()
-    csv_path = DATA_DIR / "instrument_data.csv"
-
-    header = [
-        "Timestamp",
-        "Frequency (Hz)",
-        "V_AB",
-        "V_AD",
-        "V_BC",
-        "V_CD",
-        "V_AC",
-        "V_BD",
-    ]
-
-    with csv_path.open(mode="a", newline="") as f:
-        writer = csv.writer(f)
-        _write_header_if_empty(f, writer, header)
-
-        for freq in FREQUENCIES:
-            for _ in range(n):
-                # Use DeviceManager to change frequency
-                app.dm.change_frequency(freq)
-                values = app.run(return_raw=True)
-                writer.writerow([_timestamp(), freq, *values])
-
+# ========= EIT data collection scripts (hack because of circular import, TODO: fix) =========
 
 def object_data(object_name, n=OBJECT_N):
     print(f"[DataCollector]: Getting data for {object_name}...")
@@ -256,33 +225,3 @@ def object_data(object_name, n=OBJECT_N):
                 writer.writerow([_timestamp(), location, *values])
 
             print("[DataCollector]: Done, next location!")
-
-
-# ========= Main =========
-
-
-def main():
-    print("[DataCollector]: Running data collection script...")
-    choice = (
-        input("[DataCollector]: Data to collect [Instrument: i, Object: o]: ")
-        .strip()
-        .upper()
-    )
-
-    if choice == "I":
-        instrument_data()
-    elif choice == "O":
-        object_name = input("[DataCollector]: Object name: ").strip()
-        object_data(object_name)
-    else:
-        raise RuntimeError("[DataCollector]: Unknown input!")
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except RuntimeError as e:
-        print(f"[DataCollector]: Expected error: {e}")
-    except Exception as e:
-        print(f"[DataCollector]: Unexpected error: {e}")
-
