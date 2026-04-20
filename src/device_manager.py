@@ -3,7 +3,7 @@ import pyvisa
 SCOPE_COMMAND_LIST = [
     "*RST",
     ":CHAN1:DISP ON",
-    ":CHAN1:SCAL 5",  # 5 V/div
+    ":CHAN1:SCAL 10",  # 10 V/div
     ":TIM:SCAL 1E-4",  # 0.1 ms/div, reduce this to increase voltage measurement speed
     ":TRIG:EDGE:SOUR CHAN1",
     ":TRIG:EDGE:LEV 0",
