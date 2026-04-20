@@ -82,7 +82,8 @@ class DeviceManager:
     def _probe_instruments(self, instruments):
         print("[DeviceManager]: Probing instruments...")
 
-        for resource in instruments:
+        # Filters out 'ASRL/dev/ttyS0::INSTR' issue
+        for resource in tuple(filter(lambda s: "tty" in s, instruments)):
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
@@ -99,7 +100,8 @@ class DeviceManager:
     def _find_by_idn(self, resources, keyword):
         """Select wavegen and scope by keyword."""
         print(f"[DeviceManager]: Selecting {keyword} instruments:")
-        for resource in resources:
+        # Filters out 'ASRL/dev/ttyS0::INSTR' issue
+        for resource in tuple(filter(lambda s: "tty" in s, resources)):
             try:
                 inst = self.rm.open_resource(resource)
                 idn = inst.query("*IDN?")
