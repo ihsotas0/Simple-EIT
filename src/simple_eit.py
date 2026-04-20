@@ -45,7 +45,7 @@ class SimpleEIT:
         self.mux2 = tuple(LED(pin) for pin in mux2_pins)
 
         # Turns MUXs off before switching and on again
-        self.mux_toggle = tuple(LED(pin) for pin in mux1_pins)
+        self.mux_toggle = tuple(LED(pin) for pin in mux_toggle)
 
         # Device manager
         self.dm = DeviceManager(scope_idn=scope_idn, wavegen_idn=wavegen_idn)
