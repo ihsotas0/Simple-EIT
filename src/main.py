@@ -104,11 +104,11 @@ for label, (x, y) in zip(
 ax_right.axis("off")
 ax_right.set_facecolor("#f8f9fa")
 
-# Status Box
+# Status Box - FIXED: Added explicit width to prevent character wrapping
 status_text = ax_right.text(
     0.5, 0.88, "READY\nObject: None\nModel: None",
-    ha="center", va="center", fontsize=25,
-    bbox=dict(boxstyle="round,pad=0.6", facecolor="#d4edda", edgecolor="#28a745")
+    ha="center", va="center", fontsize=11,
+    bbox=dict(boxstyle="round,pad=0.5", facecolor="#d4edda", edgecolor="#28a745", width=0.7)
 )
 
 # Instructions Box
@@ -127,7 +127,7 @@ MODELS
 7: SVM     8: XGB
 
 x: EXIT""",
-    ha="center", va="center", fontsize=20, family="monospace", linespacing=1.5,
+    ha="center", va="center", fontsize=15, family="monospace", linespacing=1.5,
     bbox=dict(boxstyle="round,pad=0.6", facecolor="#ffffff", edgecolor="#ced4da", alpha=0.95)
 )
 # Geometry & Wedges
@@ -191,10 +191,10 @@ def update(frame):
             if idx == max_text_idx:
                 global_texts[idx].set_bbox(dict(
                     boxstyle="round,pad=0.3",
-                    facecolor="gold",
+                    #facecolor="gold",
                     edgecolor="red",
                     lw=2,
-                    alpha=0.8
+                    alpha=0.0
                 ))
 
     # Format status cleanly
@@ -203,7 +203,7 @@ def update(frame):
         status_text.set_text("READY\nObject: None\nModel: None")
     else:
         status_text.set_text("ACTIVE\n" + "\n".join(status_lines))
-        status_text.set_bbox(dict(boxstyle="round,pad=0.6", facecolor="#cce5ff", edgecolor="#0056b3"))
+        status_text.set_bbox(dict(boxstyle="round,pad=0.5", facecolor="#cce5ff", edgecolor="#0056b3", width=0.7))
 
 # ========= Controls =========
 def on_key(event):
@@ -241,7 +241,7 @@ def on_key(event):
         try:
             print(f"[Main]: Key '{key}' pressed, executing action...")
             status_text.set_text("  BUSY\nExecuting command...\n(Data paused)")
-            status_text.set_bbox(dict(boxstyle="round,pad=0.6", facecolor="#fff3cd", edgecolor="#ffc107"))
+            status_text.set_bbox(dict(boxstyle="round,pad=0.5", facecolor="#fff3cd", edgecolor="#ffc107", width=0.7))
             fig.canvas.draw_idle()
 
             with hardware_lock:
