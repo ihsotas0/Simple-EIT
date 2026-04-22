@@ -106,8 +106,8 @@ ax_right.set_facecolor("#f8f9fa")
 
 # Status Box
 status_text = ax_right.text(
-    0.5, 0.88, "READY\nObject: None\nModel: None",
-    ha="center", va="center", fontsize=15,
+    0.05, 0.88, "READY\nObject: None\nModel: None",
+    ha="left", va="center", fontsize=15,
     bbox=dict(boxstyle="round,pad=0.6", facecolor="#d4edda", edgecolor="#28a745")
 )
 
@@ -191,10 +191,10 @@ def update(frame):
             if idx == max_text_idx:
                 global_texts[idx].set_bbox(dict(
                     boxstyle="round,pad=0.3",
-                    #facecolor="gold",
+                    facecolor="none",
                     edgecolor="red",
                     lw=2,
-                    alpha=0.0
+                    alpha=1.0
                 ))
 
     # Format status cleanly
