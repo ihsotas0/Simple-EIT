@@ -44,10 +44,8 @@ hardware_lock = threading.Lock()  # Absolute hardware mutex
 def data_loop():
     global latest_data
     while not stop_event.is_set():
-        # Use timeout to periodically check stop_event without blocking indefinitely
         if not pause_event.wait(timeout=0.1):
-            continue  # Still paused
-            
+            continue
         if stop_event.is_set():
             break
             
@@ -56,7 +54,6 @@ def data_loop():
             continue
             
         try:
-            # Final safety check before acquiring new data
             if stop_event.is_set():
                 break
             data = app.run()
@@ -76,7 +73,6 @@ thread = threading.Thread(target=data_loop, daemon=True)
 thread.start()
 
 # ========= Display setup =========
-# figsize=(10,6) + width_ratios=[3,2] => Left axis is exactly 6x6 inches
 fig = plt.figure(figsize=(10, 6), facecolor="#e9ecef")
 fig.subplots_adjust(wspace=0.05, left=0.08, right=0.95, top=0.92, bottom=0.08)
 gs = fig.add_gridspec(1, 2, width_ratios=[3, 2])
@@ -103,12 +99,15 @@ for label, (x, y) in zip(
 # RIGHT: Controls & Status
 ax_right.axis("off")
 ax_right.set_facecolor("#f8f9fa")
+# Explicit limits prevent renderer miscalculations that cause wrapping artifacts
+ax_right.set_xlim(0, 1)
+ax_right.set_ylim(0, 1)
 
-# Status Box - FIXED: Added explicit width to prevent character wrapping
+# Status Box: Left-aligned top positioning prevents centering wrap bugs
 status_text = ax_right.text(
-    0.5, 0.88, "READY\nObject: None\nModel: None",
-    ha="center", va="center", fontsize=11,
-    bbox=dict(boxstyle="round,pad=0.5", facecolor="#d4edda", edgecolor="#28a745", width=0.7)
+    0.05, 0.92, "READY\nObject: None\nModel: None",
+    ha="left", va="top", fontsize=15,
+    bbox=dict(boxstyle="round,pad=0.5", facecolor="#d4edda", edgecolor="#28a745")
 )
 
 # Instructions Box
@@ -127,9 +126,10 @@ MODELS
 7: SVM     8: XGB
 
 x: EXIT""",
-    ha="center", va="center", fontsize=15, family="monospace", linespacing=1.5,
+    ha="left", va="bottom", fontsize=15, family="monospace", linespacing=1.5,
     bbox=dict(boxstyle="round,pad=0.6", facecolor="#ffffff", edgecolor="#ced4da", alpha=0.95)
 )
+
 # Geometry & Wedges
 num_slices, num_rings = 8, 2
 theta = 2 * np.pi / num_slices
@@ -167,7 +167,6 @@ def update(frame):
         data = latest_data.copy()
     data = np.clip(data, 0, 1)
 
-    # Box around highest probability value
     max_row, max_col = np.unravel_index(np.argmax(data), data.shape)
     max_text_idx = max_col * num_rings + max_row
 
@@ -183,27 +182,23 @@ def update(frame):
 
             global_texts[idx].set_text(f"{value:.2f}")
             global_texts[idx].set_color(text_color)
-
-            # Clear any existing box
             global_texts[idx].set_bbox(None)
 
-            # Apply box to the highest probability text
             if idx == max_text_idx:
                 global_texts[idx].set_bbox(dict(
                     boxstyle="round,pad=0.3",
-                    #facecolor="gold",
                     edgecolor="red",
                     lw=2,
                     alpha=0.0
                 ))
 
-    # Format status cleanly
     status_lines = app.get_status()
     if not status_lines:
         status_text.set_text("READY\nObject: None\nModel: None")
+        status_text.set_bbox(dict(boxstyle="round,pad=0.5", facecolor="#d4edda", edgecolor="#28a745"))
     else:
         status_text.set_text("ACTIVE\n" + "\n".join(status_lines))
-        status_text.set_bbox(dict(boxstyle="round,pad=0.5", facecolor="#cce5ff", edgecolor="#0056b3", width=0.7))
+        status_text.set_bbox(dict(boxstyle="round,pad=0.5", facecolor="#cce5ff", edgecolor="#0056b3"))
 
 # ========= Controls =========
 def on_key(event):
@@ -212,7 +207,7 @@ def on_key(event):
 
     if key == "x":
         print("[Main]: Exiting...")
-        stop_event.set()  # Signal thread to stop immediately
+        stop_event.set()
         app.close()
         thread.join(timeout=2)
         plt.close(fig)
@@ -241,7 +236,7 @@ def on_key(event):
         try:
             print(f"[Main]: Key '{key}' pressed, executing action...")
             status_text.set_text("  BUSY\nExecuting command...\n(Data paused)")
-            status_text.set_bbox(dict(boxstyle="round,pad=0.5", facecolor="#fff3cd", edgecolor="#ffc107", width=0.7))
+            status_text.set_bbox(dict(boxstyle="round,pad=0.5", facecolor="#fff3cd", edgecolor="#ffc107"))
             fig.canvas.draw_idle()
 
             with hardware_lock:
