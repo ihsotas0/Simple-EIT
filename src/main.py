@@ -106,8 +106,8 @@ ax_right.set_facecolor("#f8f9fa")
 
 # Status Box
 status_text = ax_right.text(
-    0.05, 0.88, "READY\nObject: None\nModel: None",
-    ha="left", va="center", fontsize=15,
+    0.5, 0.88, "READY\nObject: None\nModel: None",
+    ha="center", va="center", fontsize=10,
     bbox=dict(boxstyle="round,pad=0.6", facecolor="#d4edda", edgecolor="#28a745")
 )
 
@@ -127,7 +127,7 @@ MODELS
 7: SVM     8: XGB
 
 x: EXIT""",
-    ha="center", va="center", fontsize=15, family="monospace", linespacing=1.5,
+    ha="center", va="center", fontsize=10, family="monospace", linespacing=1.5,
     bbox=dict(boxstyle="round,pad=0.6", facecolor="#ffffff", edgecolor="#ced4da", alpha=0.95)
 )
 # Geometry & Wedges
@@ -202,7 +202,7 @@ def update(frame):
     if not status_lines:
         status_text.set_text("READY\nObject: None\nModel: None")
     else:
-        status_text.set_text("ACTIVE\n" + "\n".join(status_lines))
+        status_text.set_text("ACTIVE\n" + status_lines)
         status_text.set_bbox(dict(boxstyle="round,pad=0.6", facecolor="#cce5ff", edgecolor="#0056b3"))
 
 # ========= Controls =========
@@ -240,8 +240,7 @@ def on_key(event):
         pause_event.clear()
         try:
             print(f"[Main]: Key '{key}' pressed, executing action...")
-            status_text.set_text("  BUSY\nExecuting command...\n(Data paused)")
-            status_text.set_bbox(dict(boxstyle="round,pad=0.6", facecolor="#fff3cd", edgecolor="#ffc107"))
+            status_text.set_text("BUSY\nExecuting command...\n(Data paused)")
             fig.canvas.draw_idle()
 
             with hardware_lock:
