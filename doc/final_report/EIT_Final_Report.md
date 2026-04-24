@@ -8,24 +8,24 @@ geometry: margin=3cm
 ---
 
 <!-- Use this command to make the report: -->
-<!-- pandoc -H img_fix.tex -f markdown+table_captions midreport.md -o EIT_Mid_Report.pdf -->
+<!-- nix-shell --pure -p pandoc -p texlive.combined.scheme-small --run "pandoc -H img_fix.tex -f markdown+table_captions EIT_Final_Report.md -o EIT_Final_Report.pdf" -->
 
-Electrical impedance tomography is a method for medical imaging which visualizes
-the internal resistivity of the human body, namely for real-time monitoring of
-the lungs. It measures the voltage on n-electrodes and sends an alternating
-current through 2 other electrodes. This results in a non-linear, ill-posed
-boundary value problem which, when solved, gives a 2D tomogram of resistivities.
-We have decided to make a 4 electrode electrical impedance tomography device for
-our project using an *empirical algorithm* to calculate the location of an
-object. Our visualization will, at the very least, show four pixels, each
-representing the four quadrants outlined on the sides by the electrodes. Each
-pixel will show the likelihood that there is an object of higher resistivity
-(OHR) contained in that quadrant. This visualization, we hope, will update at a
-reasonable framerate of 5-60 fps. If we succeed at this, we may expand our
-project to have more electrodes, a better framerate, a complete inverse
-algorithm, or improve it in other ways.
+Electrical Impedance Tomography (EIT) is a method of medical imaging which
+visualizes the internal resistivity of the human body, most commonly for
+real-time monitoring of the lungs. It measures voltage on n-1 pairs of
+electrodes, and sends an alternating current through the remaining pair of
+electrodes. The pair of electrodes which produces the alternating current is
+then replaced with a different pair of electrodes until all possible
+combinations of electrodes are exhausted. This results in a non-linear,
+ill-posed boundary value problem which, when solved, gives a 2D tomogram of
+resistivities. We created a 4 electrode EIT device which utilizes machine
+learning algorithms running locally to predict the location of an object of
+higher resistivity (OHR) within one of 16 sectors. This probability distribution
+is then visualized on a computer monitor in real time.
 
 Link to code and other documentation: <https://github.com/ihsotas0/simple-eit>
+
+![Simple EIT Setup on Demo Day](title_image.jpg){ width=85% }
 
 \newpage
 
@@ -45,7 +45,7 @@ Original version of data collect with manual labeling (painfully) with scope and
 
 # Experiment 6
 
-Jonah
+Jonah: Used EDU scope, got data using data_collector.py
 
 # Made CURC Poster
 
@@ -53,7 +53,7 @@ Jonah
 
 # Experiment 7
 
-Jonah, Lory
+Jonah, Lory: Verified device, fixed device_manager bugs (serial input and reloading connection twice).
 
 # Presented CURC Poster
 
