@@ -2,23 +2,37 @@
 
 > **Electrical impedance tomography software for custom four-electrode device**
 
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python
 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
 
-Simple-EIT generates a real-time 16-sector image showing the location of an
-object of higher resistivity (OHR) in an aqueous solution using machine learning
-classification of voltage measurements from a custom 4-electrode sensor array.
+Electrical Impedance Tomography (EIT) is a method of medical imaging which
+visualizes the internal resistivity of the human body, most commonly for
+real-time monitoring of the lungs. It measures voltage on n-1 pairs of
+electrodes, and sends an alternating current through the remaining pair of
+electrodes. The pair of electrodes which produces the alternating current is
+then replaced with a different pair of electrodes until all possible
+combinations of electrodes are exhausted. This results in a non-linear,
+ill-posed boundary value problem which, when solved, gives a 2D tomogram of
+resistivities. We created a 4 electrode EIT device which utilizes machine
+learning algorithms running locally to predict the location of an object of
+higher resistivity (OHR) within one of 16 sectors. This probability distribution
+is then visualized on a computer monitor in real time.
+
+![Demo Day](./doc/final_report/title_image.jpg)
 
 Research was performed using the device on multiple objects of different radii:
 
 ![CURC Poster](./doc/Simple_EIT_CURC_Poster.png)
 
+*This project is no longer under active development.*
+
 ---
 
 ## Overview
 
-Simple-EIT is a complete software stack and machine learning pipeline for that:
+Simple-EIT is a complete software stack and machine learning pipeline that:
 
 - **Acquires voltage data** from 6 electrode configurations using multiplexed
   hardware
@@ -37,7 +51,6 @@ Simple-EIT is a complete software stack and machine learning pipeline for that:
 │  device_manager.py → PyVISA instrument control   │
 │  classifier.py     → ML model management         │
 │  data_collector.py → Training data collection    │
-│  visualization.py  → CURC figures                │
 └──────────────────────────────────────────────────┘ 
 ```
 
@@ -111,7 +124,7 @@ cd src
 python main.py
 ```
 
-1. **Enter instrument identifiers** when prompted (e.g., `KEYSIGHT`, `AGILENT`)
+1. **Enter instrument identifiers** when prompted (e.g., `DSOX`, `EDU`)
 2. **Use keyboard controls** to interact:
 
 | Key | Action |
@@ -192,7 +205,9 @@ simple-eit/
 
 ### Python Constants
 
-Most Python files associated with this project are configured with Python constants like: `DEFAULT_WAVEGEN_IDN` which can be changed before running `main.py`. Other ML models can be added to `model_factory` in `classifier.py`.
+Most Python files associated with this project are configured with Python
+constants like: `DEFAULT_WAVEGEN_IDN` which can be changed before running
+`main.py`. Other ML models can be added to `model_factory` in `classifier.py`.
 
 ### Model Caching
 Models are automatically cached using a hash of the training dataset:
@@ -201,7 +216,9 @@ Models are automatically cached using a hash of the training dataset:
 data/models/{object_name}_{model_name}_{dataset_hash}.joblib
 ```
 
-To force retraining, delete the corresponding `.joblib` file.
+To force retraining, delete the corresponding `.joblib` file. Hashing of the
+datasets ensures models are retrained while running `main.py` if new data is
+appended to dataset while running auto-calibration.
 
 ---
 
@@ -247,5 +264,3 @@ Olivera Notaros, Alaa Jallad, Nicholas Green, and Jennifer Kreinbrink.
   - Jonah Spector ([@ihsotas0](https://github.com/ihsotas0))
   - Connor Cassidy
   - Chris Rayner
-
-> *This project is no longer under active development.*
