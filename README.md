@@ -76,7 +76,29 @@ pip install -r requirements.txt
 
 ### 3. Raspberry Pi Setup
 ```bash
-# TODO: Write full setup for PyVISA to allow USB connection
+# Setup for PyVISA to allow USB connection
+sudo groupadd usbgroup
+sudo usermod -aG usbgroup $USER
+sudo bash -c 'cat > /etc/udev/rules.d/99-usbgroup.rules <<EOF
+   SUBSYSTEM=="usb", GROUP="usbgroup", MODE="0666"
+   EOF'
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+sudo reboot
+
+# Connected Keysight/Agilent wavegen and scope
+
+# Identify VID and PID of USB device
+lsusb # Find VID and PID of wavegen and scope here e.g. idVendor1 and idVendor2, etc.
+sudo bash -c 'cat > /etc/udev/rules.d/99-wavegen.rules <<EOF
+   SUBSYSTEM=="usb", ATTR{idVendor1}=="VID", ATTR{idProduct1}=="PID", GROUP="usbgroup", MODE="0666"
+   EOF'
+sudo bash -c 'cat > /etc/udev/rules.d/99-scope.rules <<EOF
+   SUBSYSTEM=="usb", ATTR{idVendor2}=="VID", ATTR{idProduct2}=="PID", GROUP="usbgroup", MODE="0666"
+   EOF'
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+sudo reboot
 ```
 
 ---
@@ -113,6 +135,9 @@ python main.py
 | `8` | XGBoost | `xgboost.XGBClassifier` |
 
 ### Collect Training Data
+
+> This can also be performed while the device runs by pressing `f`.
+
 ```bash
 cd src
 python data_collector.py
@@ -138,6 +163,7 @@ Choose:
 simple-eit/
 ├── LICENSE                # MIT License
 ├── README.md              # This file
+├── todo.txt               # Future features
 ├── requirements.txt       # Python dependencies
 │
 ├── src/                   # Source code
@@ -145,12 +171,14 @@ simple-eit/
 │   ├── simple_eit.py      # High-level EIT control wrapper
 │   ├── classifier.py      # ML model management & inference
 │   ├── device_manager.py  # PyVISA hardware interface
+│   ├── pyvisa...tool.py   # PyVISA diagnostics tool for debugging
 │   ├── data_collector.py  # Training data collection utilities
 │   └── visualization.py   # CURC figure code
 │
 ├── data/                  # Datasets & cached models
 │   ├── *_data.csv         # Training datasets (generated)
-│   └── models/            # Cached .joblib model files
+│   ├── models/            # Cached .joblib model files
+│   └── archive/           # Old data and models used for CURC
 │
 ├── cad/                   # Test rig and OHR design files
 │   └── *.step, *.stl
@@ -161,6 +189,10 @@ simple-eit/
 ---
 
 ## Configuration
+
+### Python Constants
+
+Most Python files associated with this project are configured with Python constants like: `DEFAULT_WAVEGEN_IDN` which can be changed before running `main.py`. Other ML models can be added to `model_factory` in `classifier.py`.
 
 ### Model Caching
 Models are automatically cached using a hash of the training dataset:
@@ -216,5 +248,4 @@ Olivera Notaros, Alaa Jallad, Nicholas Green, and Jennifer Kreinbrink.
   - Connor Cassidy
   - Chris Rayner
 
-> *This project is under active development. APIs and hardware interfaces may
-> change.*
+> *This project is no longer under active development.*
