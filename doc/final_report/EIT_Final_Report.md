@@ -29,6 +29,10 @@ Link to code and other documentation: <https://github.com/ihsotas0/simple-eit>
 
 \newpage
 
+# Final Device
+
+
+
 # Experiment 4
 
 Jonah, Lory, Connor
@@ -58,4 +62,64 @@ Jonah, Lory: Verified device, fixed device_manager bugs (serial input and reload
 # Presented CURC Poster
 
 Jonah
+
+
+# TEMP: Images
+
+![]
+
+
+../curc_figures/curc_a_data.png
+../curc_figures/curc_b_data.png
+../curc_figures/curc_c_data.png
+../curc_figures/curc_d_data.png
+../curc_figures/curc_e_data.png
+../curc_figures/instrument_data.png
+../curc_figures/instrument_salt_data.png
+../curc_figures/loss_figure.png
+../curc_figures/loss_figure.svg
+../curc_figures/model_accuracy.png
+
+./first_16_sector_display.jpg
+./making_curc_figures.jpg
+./title_image.jpg
+./training_curc_models_in_chem_lecture.jpg
+./visualization_sticky_notes.jpg
+./whiteboard_1.jpg
+./whiteboard_2.jpg
+./whiteboard_3.jpg
+./whiteboard_4.jpg
+./whiteboard_5_hardware_details.jpg
+
+../Simple_EIT_CURC_Poster.png
+
+./experiment_4_images/closeup.jpg
+./experiment_4_images/eperiment_4_wiring_issue.jpg
+./experiment_4_images/eraser_rig.jpg
+./experiment_4_images/full_view.jpg
+./experiment_4_images/full_with_benchtop.jpg
+./experiment_6_images/clean_test_rig.jpg
+./experiment_6_images/closeup.jpg
+./experiment_6_images/full_view_2_no_test_rig.jpg
+./experiment_6_images/full_view.jpg
+./experiment_6_images/full_view_with_logs.jpg
+./experiment_6_images/logs_closeup.jpg
+./experiment_6_images/test_rig_closeup.jpg
+
+./experiment_7_images/benchtop_equipment.jpg
+./experiment_7_images/full_setup.jpg
+./experiment_7_images/hardware_setup.jpg
+./experiment_7_images/live_data.jpg
+./experiment_7_images/MUX_setup.jpg
+./experiment_7_images/test_rig.jpg
+./experiment_7_images/USB_ID_debug.jpg
+./experiment_7_images/USB_ID_fix.jpg
+./experiment_7_images/USB_ID_sectors.jpg
+./experiment_7_images/visualizer.jpg
+
+
+
+
+
+
 
