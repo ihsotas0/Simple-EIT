@@ -66,56 +66,59 @@ Jonah
 
 # TEMP: Images
 
-![]
+![HERE](../curc_figures/curc_a_data.png)
+![HERE](../curc_figures/curc_b_data.png)
+![HERE](../curc_figures/curc_c_data.png)
+![HERE](../curc_figures/curc_d_data.png)
+![HERE](../curc_figures/curc_e_data.png)
+![HERE](../curc_figures/instrument_data.png)
+![HERE](../curc_figures/instrument_salt_data.png)
+![HERE](../curc_figures/loss_figure.png)
+![HERE](../curc_figures/model_accuracy.png)
 
+![HERE](./first_16_sector_display.jpg)
+![HERE](./making_curc_figures.jpg)
+![HERE](./title_image.jpg)
+![HERE](./training_curc_models_in_chem_lecture.jpg)
+![HERE](./visualization_sticky_notes.jpg)
+![HERE](./whiteboard_1.jpg)
+![HERE](./whiteboard_2.jpg)
+![HERE](./whiteboard_3.jpg)
+![HERE](./whiteboard_4.jpg)
+![HERE](./whiteboard_5_hardware_details.jpg)
 
-../curc_figures/curc_a_data.png
-../curc_figures/curc_b_data.png
-../curc_figures/curc_c_data.png
-../curc_figures/curc_d_data.png
-../curc_figures/curc_e_data.png
-../curc_figures/instrument_data.png
-../curc_figures/instrument_salt_data.png
-../curc_figures/loss_figure.png
-../curc_figures/loss_figure.svg
-../curc_figures/model_accuracy.png
+![HERE](../Simple_EIT_CURC_Poster.png)
 
-./first_16_sector_display.jpg
-./making_curc_figures.jpg
-./title_image.jpg
-./training_curc_models_in_chem_lecture.jpg
-./visualization_sticky_notes.jpg
-./whiteboard_1.jpg
-./whiteboard_2.jpg
-./whiteboard_3.jpg
-./whiteboard_4.jpg
-./whiteboard_5_hardware_details.jpg
+![HERE](./experiment_4_images/closeup.jpg)
+![HERE](./experiment_4_images/eperiment_4_wiring_issue.jpg)
+![HERE](./experiment_4_images/eraser_rig.jpg)
+![HERE](./experiment_4_images/full_view.jpg)
+![HERE](./experiment_4_images/full_with_benchtop.jpg)
 
-../Simple_EIT_CURC_Poster.png
+![HERE](./experiment_5_images/front_view.jpg)
+![HERE](./experiment_5_images/ful_view_better.jpg)
+![HERE](./experiment_5_images/scope_output.jpg)
+![HERE](./experiment_5_images/testing_models_on_data.jpg)
+![HERE](./experiment_5_images/top_view.jpg)
 
-./experiment_4_images/closeup.jpg
-./experiment_4_images/eperiment_4_wiring_issue.jpg
-./experiment_4_images/eraser_rig.jpg
-./experiment_4_images/full_view.jpg
-./experiment_4_images/full_with_benchtop.jpg
-./experiment_6_images/clean_test_rig.jpg
-./experiment_6_images/closeup.jpg
-./experiment_6_images/full_view_2_no_test_rig.jpg
-./experiment_6_images/full_view.jpg
-./experiment_6_images/full_view_with_logs.jpg
-./experiment_6_images/logs_closeup.jpg
-./experiment_6_images/test_rig_closeup.jpg
+![HERE](./experiment_6_images/clean_test_rig.jpg)
+![HERE](./experiment_6_images/closeup.jpg)
+![HERE](./experiment_6_images/full_view_2_no_test_rig.jpg)
+![HERE](./experiment_6_images/full_view.jpg)
+![HERE](./experiment_6_images/full_view_with_logs.jpg)
+![HERE](./experiment_6_images/logs_closeup.jpg)
+![HERE](./experiment_6_images/test_rig_closeup.jpg)
 
-./experiment_7_images/benchtop_equipment.jpg
-./experiment_7_images/full_setup.jpg
-./experiment_7_images/hardware_setup.jpg
-./experiment_7_images/live_data.jpg
-./experiment_7_images/MUX_setup.jpg
-./experiment_7_images/test_rig.jpg
-./experiment_7_images/USB_ID_debug.jpg
-./experiment_7_images/USB_ID_fix.jpg
-./experiment_7_images/USB_ID_sectors.jpg
-./experiment_7_images/visualizer.jpg
+![HERE](./experiment_7_images/benchtop_equipment.jpg)
+![HERE](./experiment_7_images/full_setup.jpg)
+![HERE](./experiment_7_images/hardware_setup.jpg)
+![HERE](./experiment_7_images/live_data.jpg)
+![HERE](./experiment_7_images/MUX_setup.jpg)
+![HERE](./experiment_7_images/test_rig.jpg)
+![HERE](./experiment_7_images/USB_ID_debug.jpg)
+![HERE](./experiment_7_images/USB_ID_fix.jpg)
+![HERE](./experiment_7_images/USB_ID_sectors.jpg)
+![HERE](./experiment_7_images/visualizer.jpg)
 
 
 
