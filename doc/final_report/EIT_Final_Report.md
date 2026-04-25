@@ -111,9 +111,11 @@ for voltmeter, but the voltmeter voltage measurements were more seperatble than
 the scope. First test of using scope vs wavegen to improve speed. Spend hours
 trying to speed up voltmeter and failed, so which used scope, rewrote code, etc.
 
-![Full View of Experiment 5](./experiment_5_images/ful_view_better.jpg)
-![New Measurement Method for Experiment 5: Oscilicope](./experiment_5_images/scope_output.jpg)
-![Early Accuracy Data for Models Experiment 5](./experiment_5_images/testing_models_on_data.jpg)
+![Experiment 5: Full View](./experiment_5_images/full_view_better.jpg)
+
+![Experiment 5: Oscilicope Output](./experiment_5_images/scope_output.jpg)
+
+![Experiment 5: Early Model Testing on OHR Data](./experiment_5_images/testing_models_on_data.jpg)
 
 # Experiment 6
 
@@ -124,12 +126,19 @@ Date: April 12, 2026
 
 Team members present: Jonah
 
+For both CURC and our real-time demonstration of the device, I wanted to collect
+significant data on different objects.
+
 Used EDU scope, got data using data_collector.py
 
-![New Sector Labeling on Test Rig Experiment 6](./experiment_6_images/clean_test_rig.jpg)
+![Experiment 6: New Sector Labeling on Test Rig](./experiment_6_images/clean_test_rig.jpg)
+
 ![MUX Wiring Experiment 6](./experiment_6_images/closeup.jpg)
+
 ![Full Hardware Setup for Experiment 6](./experiment_6_images/full_view.jpg)
+
 ![Data Log for Experiment 6](./experiment_6_images/logs_closeup.jpg)
+
 ![Test Rig with Standardized Object curc_a Experiemnt 6](./experiment_6_images/test_rig_closeup.jpg)
 
 # Designed CURC Poster
@@ -140,18 +149,41 @@ Date: April 13-14, 2026
 
 Team members present: Jonah (Connor: Circuit diagram)
 
-![Voltage Distributions per Location of curc_a](../curc_figures/curc_a_data.png)
-![Voltage Distributions per Location of curc_b](../curc_figures/curc_b_data.png)
-![Voltage Distributions per Location of curc_c](../curc_figures/curc_c_data.png)
-![Voltage Distributions per Location of curc_d](../curc_figures/curc_d_data.png)
-![Voltage Distributions per Location of curc_a](../curc_figures/curc_e_data.png)
-![Voltage Distributions for Different Frequencies ](../curc_figures/instrument_data.png)
-![Voltage Distributions for Salene Solution](../curc_figures/instrument_salt_data.png)
-![Loss Curve for curc Objects using MLP Model](../curc_figures/loss_figure.png)
-![Accuracy of ML Models per Radius of the Object](../curc_figures/model_accuracy.png)
+I decided to present an evaluation of our device at CURC, the undergraduate
+poster conference. I wanted to see the smallest object our device could detect
+and evaluate different ML models at different radii of the OHR.
 
-![Early Models for Voltage Distributions](./making_curc_figures.jpg)
-![Training Data for curc Models in Chem Lecture](./training_curc_models_in_chem_lecture.jpg)
+After collecting the data for the five different objects (see Experiment 6), I
+used an early version of `classifier.py` to generated the ML models and evaluate
+their accuracies for each of the OHRs:
+
+![CURC: Training Models](./training_curc_models_in_chem_lecture.jpg)
+
+Then, using `visualization.py`, I started making figures for the poster,
+which proved to be quite challenging given the large amount of data that needed
+to be presented:
+
+![CURC: Early Figures for Voltage Distribution Visualization](./making_curc_figures.jpg)
+
+Here are the final figures we used for CURC:
+
+![CURC: Voltage Distribution Data (curc_a)](../curc_figures/curc_a_data.png)
+
+![CURC: Voltage Distribution Data (curc_b)](../curc_figures/curc_b_data.png)
+
+![CURC: Voltage Distribution Data (curc_c)](../curc_figures/curc_c_data.png)
+
+![CURC: Voltage Distribution Data (curc_d)](../curc_figures/curc_d_data.png)
+
+![CURC: Voltage Distribution Data (curc_e)](../curc_figures/curc_e_data.png)
+
+![CURC: Voltage Distribution Data for Different Frequencies](../curc_figures/instrument_data.png)
+
+![CURC: Voltage Distribution Data for Saline Solution](../curc_figures/instrument_salt_data.png)
+
+![CURC: Loss Curves for MLP Models](../curc_figures/loss_figure.png)
+
+![CURC: Accuracy vs OHR Radius](../curc_figures/model_accuracy.png)
 
 # Experiment 7
 
@@ -165,13 +197,21 @@ Team members present: Jonah, Christian
 Verified device, fixed device_manager bugs (serial input and reloading connection twice).
 
 ![Finalized Setup with new Oscilicope](./experiment_7_images/benchtop_equipment.jpg)
+
 ![Finalized Hardware Setup Experiment 7](./experiment_7_images/full_setup.jpg)
+
 ![Live Data Log Experiment 7](./experiment_7_images/live_data.jpg)
+
 ![MUX Wiring Experiment 7](./experiment_7_images/MUX_setup.jpg)
+
 ![Finalized Test Rig with Standardized Objects a-e](./experiment_7_images/test_rig.jpg)
+
 ![Debugging Filter for USB Connection ID](./experiment_7_images/USB_ID_debug.jpg)
+
 ![Fix for Filter of USB Connection ID](./experiment_7_images/USB_ID_fix.jpg)
+
 ![Name of Device to USB Connection IDs](./experiment_7_images/USB_ID_sectors.jpg)
+
 ![16 Section Probability Visualizer Experiment 7](./experiment_7_images/visualizer.jpg)
 
 ![Improved Clips](./experiment_7_images/Test_Rig_Improved_Clips.jpg)
@@ -185,6 +225,8 @@ Date: April 21, 2026
 Team members present: Jonah, Connor, Christian
 
 ![CURC Poster](../Simple_EIT_CURC_Poster.png)
+
+# Conclusion
 
 # Other Images
 
