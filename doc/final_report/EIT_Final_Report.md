@@ -8,7 +8,9 @@ geometry: margin=3cm
 ---
 
 <!-- Use this command to make the report: -->
-<!-- nix-shell --pure -p pandoc -p texlive.combined.scheme-small --run "pandoc -H img_fix.tex -f markdown+table_captions EIT_Final_Report.md -o EIT_Final_Report.pdf" -->
+
+<!-- nix-shell --pure -p pandoc -p texlive.combined.scheme-small --run "pandoc -H img_fix.tex
+-f markdown+table_captions EIT_Final_Report.md -o EIT_Final_Report.pdf" -->
 
 Electrical Impedance Tomography (EIT) is a method of medical imaging which
 visualizes the internal resistivity of the human body, most commonly for
@@ -58,18 +60,18 @@ mouse over USB, and the monitor over HDMI. For testing, PLA cylinders of 3.0,
 
 TODO: Need to mention wavegen parameters including frequency
 
-TODO: Circuit diagram
+![Circuit Diagram](./Circuit_Diagram.png){ width=85% }
 
-| Component | Model/Specification | Purpose |
-|-----------|-------------------|---------|
-| Digital Multimeter | Keysight (any VISA-compatible) | RMS voltage measurement |
-| Waveform Generator | Agilent/Keysight (any VISA-compatible) | Excitation signal |
-| Analog Multiplexers | 2× MUX36D04EVM-PDK | Electrode selection (S+, S-, V+, V-) |
-| DC Power Supply | 10 V DC | Power multiplexer evaluation boards |
-| Controller | Raspberry Pi 3B (recommended) | GPIO control and computation |
-| 3D Printed Test Rig | PET G | Hold OHR and water |
-| Electrodes | 4x Stainless steel electrodes | Measure voltage/generate current |
-| Connectors | (16 + 2 + 2 + 4)x Banana hook connectors | Wire devices together |
+| Component           | Model/Specification                      | Purpose                              | Source               |
+| :------------------ | :--------------------------------------- | :----------------------------------- | :------------------- |
+| Digital Multimeter  | Keysight (any VISA-compatible)           | RMS voltage measurement              | C105                 |
+| Waveform Generator  | Agilent/Keysight (any VISA-compatible)   | Excitation signal                    | C105                 |
+| Analog Multiplexers | 2× MUX36D04EVM-PDK                       | Electrode selection (S+, S-, V+, V-) | Borrowed, EIR Mentor |
+| DC Power Supply     | 10 V DC                                  | Power multiplexer evaluation boards  | C105                 |
+| Controller          | Raspberry Pi 3B (recommended)            | GPIO control and computation         | Borrowed, Friend     |
+| 3D Printed Test Rig | PET G                                    | Hold OHR and water                   | I2P Lab, Free        |
+| Electrodes          | 4x Stainless steel electrodes            | Measure voltage/generate current     | Given, Free          |
+| Connectors          | (16 + 2 + 2 + 4)x Banana hook connectors | Wire devices together                | Purchased, Amazon    |
 
 Table: Hardware requirements
 
@@ -77,6 +79,7 @@ Table: Hardware requirements
 
 Team members responsible: Jonah
 
+TODO
 
 # Experiment 4
 
@@ -98,6 +101,12 @@ backwards. Wrapped cables.
 First time full integration of RPi, MUX, and visualizer. For 4 sectors with
 eraser and voltmeter, not scope, and 2nd highest method.
 
+![Wiring For MUX Experiment 4](./experiment_4_images/closeup.jpg)
+![Hardware Wiring Issue Experiment 4](./experiment_4_images/eperiment_4_wiring_issue.jpg)
+![Eraser Locating Test Experiment 4](./experiment_4_images/eraser_rig.jpg)
+![Full Device Hardware Setup for Experiment 4](./experiment_4_images/full_view.jpg)
+![Benchtop Equipment Hardware for Experiment 4](./experiment_4_images/full_with_benchtop.jpg)
+
 # Experiment 5
 
 Summary: Switched the device from a slow voltmeter to a faster oscilloscope.
@@ -106,7 +115,15 @@ Date: April 3, 2026
 
 Team members present: Jonah, Connor
 
-Original version of data collect with manual labeling (painfully) with voltmeter and tried 4 pixel display running 2nd highest, which didn't work. It did work for voltmeter, but the voltmeter voltage measurements were more seperatble than the scope. First test of using scope vs wavegen to improve speed. Spend hours trying to speed up voltmeter and failed, so which used scope, rewrote code, etc.
+Original version of data collect with manual labeling (painfully) with voltmeter
+and tried 4 pixel display running 2nd highest, which didn't work. It did work
+for voltmeter, but the voltmeter voltage measurements were more seperatble than
+the scope. First test of using scope vs wavegen to improve speed. Spend hours
+trying to speed up voltmeter and failed, so which used scope, rewrote code, etc.
+
+![Full View of Experiment 5](./experiment_5_images/ful_view_better.jpg)
+![New Measurement Method for Experiment 5: Oscilicope](./experiment_5_images/scope_output.jpg)
+![Early Accuracy Data for Models Experiment 5](./experiment_5_images/testing_models_on_data.jpg)
 
 # Experiment 6
 
@@ -119,6 +136,12 @@ Team members present: Jonah
 
 Used EDU scope, got data using data_collector.py
 
+![New Sector Labeling on Test Rig Experiment 6](./experiment_6_images/clean_test_rig.jpg)
+![MUX Wiring Experiment 6](./experiment_6_images/closeup.jpg)
+![Full Hardware Setup for Experiment 6](./experiment_6_images/full_view.jpg)
+![Data Log for Experiment 6](./experiment_6_images/logs_closeup.jpg)
+![Test Rig with Standardized Object curc_a Experiemnt 6](./experiment_6_images/test_rig_closeup.jpg)
+
 # Designed CURC Poster
 
 Summary: Created research poster on data collected for the device on different OHRs.
@@ -126,26 +149,6 @@ Summary: Created research poster on data collected for the device on different O
 Date: April 13-14, 2026
 
 Team members present: Jonah (Connor: Circuit diagram)
-
-# Experiment 7
-
-Summary: Final debugging and verification of device for 16-sector visualization and ML model caching.
-
-Date: April 19, 2026
-
-Team members present: Jonah, Christian
-
-Verified device, fixed device_manager bugs (serial input and reloading connection twice).
-
-# Presented CURC Poster
-
-Summary: Presented resarch at CURC.
-
-Date: April 21, 2026
-
-Team members present: Jonah, Connor, Christian
-
-# TEMP: Images
 
 ![Voltage Distributions per Location of curc_a](../curc_figures/curc_a_data.png)
 ![Voltage Distributions per Location of curc_b](../curc_figures/curc_b_data.png)
@@ -157,34 +160,19 @@ Team members present: Jonah, Connor, Christian
 ![Loss Curve for curc Objects using MLP Model](../curc_figures/loss_figure.png)
 ![Accuracy of ML Models per Radius of the Object](../curc_figures/model_accuracy.png)
 
-![Early 16 Sector Display using MatPlotLib](./first_16_sector_display.jpg)
 ![Early Models for Voltage Distributions](./making_curc_figures.jpg)
-![Demo Day hardware and Software](./title_image.jpg)
 ![Training Data for curc Models in Chem Lecture](./training_curc_models_in_chem_lecture.jpg)
-![Early Visualization designs](./visualization_sticky_notes.jpg)
-![Brainstorming Poster Data Presentation](./whiteboard_1.jpg)
-![Brainstorming Model Accuracy (delete)](./whiteboard_2.jpg)
-![Brainstorming Model Accuracy vs Radius for Poster](./whiteboard_3.jpg)
-![Data Collection method for curc Poster & Calcuations for Salinity](./whiteboard_4.jpg)
-![Brainstorming Hardware Documentation](./whiteboard_5_hardware_details.jpg)
 
-![CURC Poster](../Simple_EIT_CURC_Poster.png)
+# Experiment 7
 
-![Wiring For MUX Experiment 4](./experiment_4_images/closeup.jpg)
-![Hardware Wiring Issue Experiment 4](./experiment_4_images/eperiment_4_wiring_issue.jpg)
-![Eraser Locating Test Experiment 4](./experiment_4_images/eraser_rig.jpg)
-![Full Device Hardware Setup for Experiment 4](./experiment_4_images/full_view.jpg)
-![Benchtop Equipment Hardware for Experiment 4](./experiment_4_images/full_with_benchtop.jpg)
+Summary: Final debugging and verification of device for 16-sector visualization
+and ML model caching.
 
-![Full View of Experiment 5](./experiment_5_images/ful_view_better.jpg)
-![New Measurement Method for Experiment 5: Oscilicope](./experiment_5_images/scope_output.jpg)
-![Early Accuracy Data for Models Experiment 5](./experiment_5_images/testing_models_on_data.jpg)
+Date: April 19, 2026
 
-![New Sector Labeling on Test Rig Experiment 6](./experiment_6_images/clean_test_rig.jpg)
-![MUX Wiring Experiment 6](./experiment_6_images/closeup.jpg)
-![Full Hardware Setup for Experiment 6](./experiment_6_images/full_view.jpg)
-![Data Log for Experiment 6](./experiment_6_images/logs_closeup.jpg)
-![Test Rig with Standardized Object curc_a Experiemnt 6](./experiment_6_images/test_rig_closeup.jpg)
+Team members present: Jonah, Christian
+
+Verified device, fixed device_manager bugs (serial input and reloading connection twice).
 
 ![Finalized Setup with new Oscilicope](./experiment_7_images/benchtop_equipment.jpg)
 ![Finalized Hardware Setup Experiment 7](./experiment_7_images/full_setup.jpg)
@@ -196,44 +184,65 @@ Team members present: Jonah, Connor, Christian
 ![Name of Device to USB Connection IDs](./experiment_7_images/USB_ID_sectors.jpg)
 ![16 Section Probability Visualizer Experiment 7](./experiment_7_images/visualizer.jpg)
 
+# Presented CURC Poster
+
+Summary: Presented resarch at CURC.
+
+Date: April 21, 2026
+
+Team members present: Jonah, Connor, Christian
+
+![CURC Poster](../Simple_EIT_CURC_Poster.png)
+
+# Other Images
+
+![Hardware Documentation](./whiteboard_5_hardware_details.jpg)
+
+![Poster Design 1](./whiteboard_1.jpg)
+
+![Poster Design 2](./whiteboard_3.jpg)
+
+![Data Collection Method for CURC and Calcuations](./whiteboard_4.jpg)
+
+![Early 16 Sector Display using Matplotlib](./first_16_sector_display.jpg)
 
 # Acknowledgments
 
 Chuck Duey, Dr. Elaine Linde, Dr. Jennifer Mueller, Dr. Diego Krapf, Prof.
 Olivera Notaros, Alaa Jallad, Nicholas Green, and Jennifer Kreinbrink.
 
-# Other Tables
+# Original Tables
 
-| Bill of Materials                                             |                  |
-|---------------------------------------------------------------|:-----------------|
-| Keysight digital multimeter (34470A)                          | C105             |
-| Agilent waveform generator (33600A)                           | C105             |
-| (16 + 2 + 2 + 4) x Banana-to-hook/hook-to-plug test leads | C105             |
-| 2 x MUX36D04EVM-PDK                                           | Borrowed, EIR Mentor  |
-| 4 x stainless steel electrodes                                | Given for Free   |
-| Raspberry Pi 3B                                               | Borrowed, Friend |
-| 3D printed test rig, OHR, and other plastic apparatus         | I2P Lab, Free    |
-| Water                                                         | Free             |
+| Bill of Materials                                         |                      |
+| --------------------------------------------------------- | :------------------- |
+| Keysight digital multimeter (34470A)                      | C105                 |
+| Agilent waveform generator (33600A)                       | C105                 |
+| (16 + 2 + 2 + 4) x Banana-to-hook/hook-to-plug test leads | C105                 |
+| 2 x MUX36D04EVM-PDK                                       | Borrowed, EIR Mentor |
+| 4 x stainless steel electrodes                            | Given for Free       |
+| Raspberry Pi 3B                                           | Borrowed, Friend     |
+| 3D printed test rig, OHR, and other plastic apparatus     | I2P Lab, Free        |
+| Water                                                     | Free                 |
 
-| Deadlines             |                                                                                                                                   |
-|-----------------------|:----------------------------------------------------------------------------------------------------------------------------------|
-| Week 2                | Advanced proof of concept, test rig, device requirements.                                                                         |
-| Week 3-4              | Hard-/software requirements, order DEMUXs, pseudo-code manual algorithm, AC power supply, digital multimeter.                     |
-| Week 5                | Manual MUX, manual algorithm (PyVISA).                                                                                            |
-| Week 6 (Mid-report)   | Implement microcontroller, microcontroller program, computer real-time visualization algorithm.                                   |
-| Week 7 (Spring Break) | Break\! No catch up needed\!                                                                                                      |
-| Week 8                | Fix algorithm to correctly identify location, speed up voltage measurements (from \>1 s to \<5 ms), improve wiring and apparatus. |
-| Week 9                | Complete system integration, debugging (device complete).                                                                         |
-| Week 10               | Improve speed of microcontroller, DEMUX, visualizer.                                                                              |
-| Week 11               | Finalize demo presentation and project report.                                                                                    |
-| Week 12 (Demo)        | Catch-up week.                                                                                                                    |
+| Deadlines             |                                                                                                                                  |
+| --------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| Week 2                | Advanced proof of concept, test rig, device requirements.                                                                        |
+| Week 3-4              | Hard-/software requirements, order DEMUXs, pseudo-code manual algorithm, AC power supply, digital multimeter.                    |
+| Week 5                | Manual MUX, manual algorithm (PyVISA).                                                                                           |
+| Week 6 (Mid-report)   | Implement microcontroller, microcontroller program, computer real-time visualization algorithm.                                  |
+| Week 7 (Spring Break) | Break\! No catch up needed\!                                                                                                     |
+| Week 8                | Fix algorithm to correctly identify location, speed up voltage measurements (from \>1 s to <5 ms), improve wiring and apparatus. |
+| Week 9                | Complete system integration, debugging (device complete).                                                                        |
+| Week 10               | Improve speed of microcontroller, DEMUX, visualizer.                                                                             |
+| Week 11               | Finalize demo presentation and project report.                                                                                   |
+| Week 12 (Demo)        | Catch-up week.                                                                                                                   |
 
-| Goals         |                                                                                                                                                                                                 |
-|---------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Must          | Test rig, 4 electrode network, independent AC power supply, digital voltmeter, DEMUX to switch configurations (30 Hz), Python visualizer (4 pixel display), microcontroller system integration. |
-| Want          | Higher speed configuration switching (\~360 Hz), faster Python/C visualizer, custom AC power supply, full lumped element model solver.                                                          |
-| Great | More electrodes (5), bigger test rig, full BVP solver.                                                                                                                                          |
-| Miracle       | Even more electrodes, more DEMUXs, organic tests (arteries, veins, trachea). Full EIT with lung test (impossible).                                                                              |
+| Goals   |                                                                                                                                                                                                 |
+| ------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Must    | Test rig, 4 electrode network, independent AC power supply, digital voltmeter, DEMUX to switch configurations (30 Hz), Python visualizer (4 pixel display), microcontroller system integration. |
+| Want    | Higher speed configuration switching (\~360 Hz), faster Python/C visualizer, custom AC power supply, full lumped element model solver.                                                          |
+| Great   | More electrodes (5), bigger test rig, full BVP solver.                                                                                                                                          |
+| Miracle | Even more electrodes, more DEMUXs, organic tests (arteries, veins, trachea). Full EIT with lung test (impossible).                                                                              |
 
 
 
