@@ -1,5 +1,3 @@
-Finish final report
-Finish README
 Fix requirements.txt
 Clean up visualization.py
 

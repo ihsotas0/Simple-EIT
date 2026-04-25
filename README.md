@@ -41,6 +41,8 @@ Simple-EIT is a complete software stack and machine learning pipeline that:
 - **Supports multiple classifiers**: SVM (recommended), Random Forest, XGBoost,
   Neural Networks, and more
 - **Caches trained models** for each object to avoid redundant training
+- **Auto-calibrates new objects** by collecting small datasets for ML training
+  real-time
 
 ```
 ┌──────────────────────────────────────────────────┐
