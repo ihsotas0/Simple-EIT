@@ -498,6 +498,55 @@ improved for user experience.
 
 \newpage
 
+# References
+
+We used the general Python documentation: <https://docs.python.org/3/>,
+<https://scikit-learn.org/stable/user_guide.html>,
+<https://pyvisa.readthedocs.io/en/latest/>, etc. (Documentation for all the
+listed Python libraries.)
+
+We also used the user guide for our MUX36D04EVM-PDK boards: <https://www.ti.com/lit/pdf/SBAU255>
+
+We used <https://pinout.xyz/> for RPi GPIO documentation.
+
+# Bibliography (MLA)
+
+Muller, P A, et al. “Estimating a regional ventilation-perfusion index.”
+*Physiological Measurement*, vol. 36, no. 6, 26 May 2015, pp. 1283-1295,
+https://doi.org/10.1088/0967-3334/36/6/1283. Accessed 3 Apr. 2026.
+
+Barbosa da Rosa, Nilton Jr, et al. “Three-Dimensional Electrical Impedance
+Imaging During Spontaneous Breathing Trials in Patients With Acute Hypoxic
+Respiratory Failure: A Pilot Study.” *Critical Care Explorations*, vol. 7, no. 1,
+Jan. 2025, p. e1198, https://doi.org/10.1097/CCE.0000000000001198. Accessed 3
+Apr. 2026.
+
+Guillaume Franchineau, et al. “Electrical Impedance Tomography to Monitor
+Hypoxemic Respiratory Failure.” *American Journal of Respiratory and Critical
+Care Medicine* vol. 209, no. 6, 21 Dec. 2023, pp. 670-682,
+https://doi.org/10.1164/rccm.202306-1118CI. Accessed 3 Apr. 2026.
+
+Bachmann, M. Consuelo, et al. “Electrical impedance tomography in acute
+respiratory distress syndrome.” *Critical Care*, vol. 22, no. 1, 25 Oct. 2018, p.
+263, https://doi.org/10.1186/s13054- 018-2195-6. Accessed 3 Apr. 2026.
+
+Shono, Atsuko, and Toru Kotani. “Clinical Implication of Monitoring Regional Ventilation Using
+Electrical Impedance Tomography.” *Journal of Intensive Care*, vol. 7, no. 1, 18 Jan. 2019,
+https://doi.org/10.1186/s40560-019-0358-4. Accessed 3 Apr. 2026.
+
+Alsaker, Melody, et al. “CT Scans without X-Rays: Parallel-Beam Imaging from Nonlinear Current
+Flows.” *Applied Mathematics for Modern Challenges*, vol. 5, no. 0, 2025, pp. 1–35,
+https://doi.org/10.3934/ammc.2025009. Accessed 3 Apr. 2026.
+
+Rocheleau, Christopher J., et al. “Use of an Anatomical Atlas in Real-Time EIT Reconstructions of
+Ventilation and Pulsatile Perfusion in Preterm Infants.” *Scientific Reports*, vol. 15, no. 1, 13
+Aug. 2025, https://doi.org/10.1038/s41598-025-15543-2. Accessed 3 Apr. 2026.
+
+Mueller, Jennifer L. “Non-Iterative Reconstruction of Respiratory and Cardiac Activity in Infants from
+Electrical Impedance Tomography Data.” *Philosophical Transactions of the Royal Society A:
+Mathematical, Physical and Engineering Sciences*, vol. 383, no. 2305, 25 Sept. 2025,
+https://doi.org/10.1098/rsta.2024.0060. Accessed 3 Apr. 2026.
+
 # Appendix
 
 ![Hardware Documentation](./whiteboard_5_hardware_details.jpg){ width=50% }
