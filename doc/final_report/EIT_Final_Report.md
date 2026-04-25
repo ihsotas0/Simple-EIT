@@ -184,6 +184,8 @@ Verified device, fixed device_manager bugs (serial input and reloading connectio
 ![Name of Device to USB Connection IDs](./experiment_7_images/USB_ID_sectors.jpg)
 ![16 Section Probability Visualizer Experiment 7](./experiment_7_images/visualizer.jpg)
 
+![Improved Clips](./experiment_7_images/Test_Rig_Improved_Clips.jpg)
+
 # Presented CURC Poster
 
 Summary: Presented resarch at CURC.
