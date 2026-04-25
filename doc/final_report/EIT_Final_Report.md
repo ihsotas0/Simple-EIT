@@ -89,17 +89,7 @@ Date: March 27, 2026
 
 Team members present: Jonah, Connor, Christian
 
-Our first experiment since the mid-report, we started by wrapping the cables to
-improve how we wired the device. Then, we decided to test our code using an
-eraser as our OHR and 2nd highest as our detection method (where the index of
-the 2nd highest of the non-diagonal voltage measurements defined the location of
-the object).
-
-Basic manual MUX test and 2nd highest on that. Fixed RPi MUX switching being
-backwards. Wrapped cables.
-
-First time full integration of RPi, MUX, and visualizer. For 4 sectors with
-eraser and voltmeter, not scope, and 2nd highest method.
+Our first experiment since the mid-report, we started by using new four channel pomona grabber to alligator clip cables for the MUX in order to switch between configurations. First we used the MUX manually to find trends in the data. We observed that the index of the 2nd highest of the non-diagonal voltage measurements defined the location of the object. Using this newfound method, we decided to test our code using an eraser as our OHR and conducted a second manual MUX test. Through this testing we found that the RPi MUX switching wad backwards from Experiment 3 which reversed our data classification and caused the issues in our experiment 3 data. This experiment was the first full integration of RPi, MUX, and visualizer for our project using the four sectors with eraser and voltmeter, not scope, and 2nd highest method.
 
 ![Wiring For MUX Experiment 4](./experiment_4_images/closeup.jpg)
 ![Hardware Wiring Issue Experiment 4](./experiment_4_images/eperiment_4_wiring_issue.jpg)
