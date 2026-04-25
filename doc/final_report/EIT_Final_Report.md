@@ -50,11 +50,11 @@ Since our ability to design and manufacture entirely custom EIT circuits was
 limited, we had to reduce the number of electrodes we used down to 4 to allow us
 to use dedicated evaluation boards given to us by our EIR mentor Chuck Duey.
 With only 4 electrodes, the resolution of our boundary conditions, necessary for
-the computation of internal impedances, was far to limited to implement full
+the computation of internal impedances, was far too limited to implement full
 EIT. Despite this, we were able to achieve 16 pixel resolution of a known
-impedance. By keeping the frequency and other parameters constant, the impedance
-constant, it was possible to extract more information from the 6 voltage
-measurements: enough for a proper demonstration of the device.
+impedance. Keeping the frequency, impedance, and other parameters constant made
+it possible to extract more information from the 6 voltage measurements: enough
+for a proper demonstration of the device.
 
 We don't think our instrument has many applications, but it does show the
 feasibility of using simple conditional models on low dimensional data with
@@ -78,7 +78,7 @@ of PETG which served to contain the water (100ml). Four stainless steel
 electrodes (2.5 x 2.5cm) were clamped to the corners of each quadrant using
 alligator clips. The test rig presented at the industry advisory board meeting
 included slots for the electrodes. The top of each alligator clip is soldered to
-four wires which have pomona grabbers on the opposite end. The 16 pomona
+four wires which have Pomona grabbers on the opposite end. The 16 Pomona
 grabbers (4 for each quadrant) are secured to the MUX36D04EVM-PDKs (MUXs),
 labeled as M1 and M2 shown in the circuit diagram. The positive probes of the
 EDU33212A Keysight Waveform Generator and DSOX1202A Keysight Oscilloscope are
@@ -104,16 +104,16 @@ $$ r_i = \frac{r_o}{\sqrt{2}} $$
 
 ![Circuit Diagram](./Circuit_Diagram.png){ width=85% }
 
-| Component           | Model/Specification                      | Purpose                              | Source               |
-| :------------------ | :--------------------------------------- | :----------------------------------- | :------------------- |
-| Digital Multimeter  | Keysight (any VISA-compatible)           | RMS voltage measurement              | C105                 |
-| Waveform Generator  | Agilent/Keysight (any VISA-compatible)   | Excitation signal                    | C105                 |
-| Analog Multiplexers | 2× MUX36D04EVM-PDK                       | Electrode selection (S+, S-, V+, V-) | Borrowed, EIR Mentor |
-| DC Power Supply     | 10 V DC                                  | Power multiplexer evaluation boards  | C105                 |
-| Controller          | Raspberry Pi 3B (recommended)            | GPIO control and computation         | Borrowed, Friend     |
-| 3D Printed Test Rig | PET G                                    | Hold OHR and water                   | I2P Lab, Free        |
-| Electrodes          | 4x Stainless steel electrodes            | Measure voltage/generate current     | Given, Free          |
-| Connectors          | (16 + 2 + 2 + 4)x Banana hook connectors | Wire devices together                | $30, Amazon    |
+| Component            | Model/Specification                      | Purpose                              | Source               |
+| :------------------- | :--------------------------------------- | :----------------------------------- | :------------------- |
+| Digital Oscilloscope | Keysight (any VISA-compatible)           | RMS voltage measurement              | C105                 |
+| Waveform Generator   | Agilent/Keysight (any VISA-compatible)   | Excitation signal                    | C105                 |
+| Analog Multiplexers  | 2× MUX36D04EVM-PDK                       | Electrode selection (S+, S-, V+, V-) | Borrowed, EIR Mentor |
+| DC Power Supply      | 10 V DC                                  | Power multiplexer evaluation boards  | C105                 |
+| Controller           | Raspberry Pi 3B (recommended)            | GPIO control and computation         | Borrowed, Friend     |
+| 3D Printed Test Rig  | PETG                                     | Hold OHR and water                   | I2P Lab, Free        |
+| Electrodes           | 4x Stainless steel electrodes            | Measure voltage/generate current     | Given, Free          |
+| Connectors           | (16 + 2 + 2 + 4)x Banana hook connectors | Wire devices together                | $30, Amazon          |
 
 Table: Hardware bill of materials
 
@@ -178,7 +178,7 @@ Date: March 27, 2026
 Team members present: Jonah, Connor, Christian
 
 Our first experiment since the mid-report, we started by using new four channel
-pomona grabber to alligator clip cables for the MUX in order to switch between
+Pomona grabber to alligator clip cables for the MUX in order to switch between
 configurations. First we used the MUX manually to find trends in the data. We
 observed that the index of the 2nd highest of the non-diagonal voltage
 measurements defined the location of the object. Using this newfound method, we
@@ -198,7 +198,7 @@ according to the source configuration and not voltage measurement configuration
 voltage measured). This was what caused Experiment 3 (found in the mid-report)
 to fail:
 
-![Experiment 4: Mislabeled Voltage Configurations](./experiment_4_images/eperiment_4_wiring_issue.jpg){ width=50% }
+![Experiment 4: Mislabeled Voltage Configurations](./experiment_4_images/wiring_issue.jpg){ width=50% }
 
 This experiment was the first full device integration, including RPi, MUXs, and
 visualizer. We used an eraser as our OHR and voltmeter instead of oscilloscope,
@@ -230,7 +230,7 @@ The data we got from the oscilloscope was significantly different from the
 voltmeter, but we were able to redo the data collection quickly. The patterns we
 used in the voltmeter data to classify the location as being in one of four
 quadrants were gone and the noise increased, so we decided to use machine
-learning to classify the location of the OHR using perviously collected data. An
+learning to classify the location of the OHR using previously collected data. An
 early test of some ML models on the data we collected showed promise:
 
 ![Experiment 5: Early ML Testing on OHR Data](./experiment_5_images/testing_models_on_data.jpg){ width=50% }
@@ -539,7 +539,7 @@ improved for user experience.
 | Goals   |                                                                                                                                                                                                 |
 | ------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Must    | Test rig, 4 electrode network, independent AC power supply, digital voltmeter, DEMUX to switch configurations (30 Hz), Python visualizer (4 pixel display), microcontroller system integration. |
-| Want    | Higher speed configuration switching (~360 Hz), faster Python/C visualizer, custom AC power supply, full lumped element model solver.                                                          |
+| Want    | Higher speed configuration switching (~360 Hz), faster Python/C visualizer, custom AC power supply, full lumped element model solver.                                                           |
 | Great   | More electrodes (5), bigger test rig, full BVP solver.                                                                                                                                          |
 | Miracle | Even more electrodes, more DEMUXs, organic tests (arteries, veins, trachea). Full EIT with lung test (impossible).                                                                              |
 

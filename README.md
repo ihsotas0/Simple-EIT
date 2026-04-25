@@ -60,16 +60,16 @@ Simple-EIT is a complete software stack and machine learning pipeline that:
 
 ## Hardware Requirements
 
-| Component | Model/Specification | Purpose |
-|-----------|-------------------|---------|
-| Digital Multimeter | Keysight (any VISA-compatible) | RMS voltage measurement |
-| Waveform Generator | Agilent/Keysight (any VISA-compatible) | Excitation signal |
-| Analog Multiplexers | 2× MUX36D04EVM-PDK | Electrode selection (S+, S-, V+, V-) |
-| DC Power Supply | 10 V DC | Power multiplexer evaluation boards |
-| Controller | Raspberry Pi 3B (recommended) | GPIO control and computation |
-| 3D Printed Test Rig | PET G | Hold OHR and water |
-| Electrodes | 4x Stainless steel electrodes | Measure voltage/generate current |
-| Connectors | (16 + 2 + 2 + 4)x Banana hook connectors | Wire devices together |
+| Component            | Model/Specification                      | Purpose                              |
+| -------------------- | ---------------------------------------- | ------------------------------------ |
+| Digital Oscilloscope | Keysight (any VISA-compatible)           | RMS voltage measurement              |
+| Waveform Generator   | Agilent/Keysight (any VISA-compatible)   | Excitation signal                    |
+| Analog Multiplexers  | 2× MUX36D04EVM-PDK                       | Electrode selection (S+, S-, V+, V-) |
+| DC Power Supply      | 10 V DC                                  | Power multiplexer evaluation boards  |
+| Controller           | Raspberry Pi 3B (recommended)            | GPIO control and computation         |
+| 3D Printed Test Rig  | PETG                                     | Hold OHR and water                   |
+| Electrodes           | 4x Stainless steel electrodes            | Measure voltage/generate current     |
+| Connectors           | (16 + 2 + 2 + 4)x Banana hook connectors | Wire devices together                |
 
 > **Safety Note**: Always verify Raspberry Pi can not recieve 10 V from DC power
 > supply.
@@ -129,25 +129,25 @@ python main.py
 1. **Enter instrument identifiers** when prompted (e.g., `DSOX`, `EDU`)
 2. **Use keyboard controls** to interact:
 
-| Key | Action |
-|-----|--------|
+| Key     | Action                                          |
+| ------- | ----------------------------------------------- |
 | `a`-`e` | Select predefined object (`curc_a` to `curc_e`) |
-| `f` | Run auto-calibration for new object |
-| `g` | Set custom object name |
-| `1`-`8` | Switch ML model (see table below) |
-| `x` | Exit application |
+| `f`     | Run auto-calibration for new object             |
+| `g`     | Set custom object name                          |
+| `1`-`8` | Switch ML model (see table below)               |
+| `x`     | Exit application                                |
 
 ### Available ML Models
-| Key | Model | Description |
-|-----|-------|-------------|
-| `1` | Gradient Boosting | `sklearn.ensemble.GradientBoostingClassifier` |
-| `2` | K-Nearest Neighbors | `sklearn.neighbors.KNeighborsClassifier` |
+| Key | Model                        | Description                                                |
+| --- | ---------------------------- | ---------------------------------------------------------- |
+| `1` | Gradient Boosting            | `sklearn.ensemble.GradientBoostingClassifier`              |
+| `2` | K-Nearest Neighbors          | `sklearn.neighbors.KNeighborsClassifier`                   |
 | `3` | Linear Discriminant Analysis | `sklearn.discriminant_analysis.LinearDiscriminantAnalysis` |
-| `4` | Logistic Regression | `sklearn.linear_model.LogisticRegression` |
-| `5` | Multi-Layer Perceptron | `sklearn.neural_network.MLPClassifier` |
-| `6` | Random Forest | `sklearn.ensemble.RandomForestClassifier` |
-| `7` | **Support Vector Machine** | `sklearn.svm.SVC` (recommended) |
-| `8` | XGBoost | `xgboost.XGBClassifier` |
+| `4` | Logistic Regression          | `sklearn.linear_model.LogisticRegression`                  |
+| `5` | Multi-Layer Perceptron       | `sklearn.neural_network.MLPClassifier`                     |
+| `6` | Random Forest                | `sklearn.ensemble.RandomForestClassifier`                  |
+| `7` | **Support Vector Machine**   | `sklearn.svm.SVC` (recommended)                            |
+| `8` | XGBoost                      | `xgboost.XGBClassifier`                                    |
 
 ### Collect Training Data
 
